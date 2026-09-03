@@ -205,6 +205,8 @@ class SupervisedImageClassifier(LightningModule):
 
     def test_step(self, batch, batch_idx):
         x, y = batch
+        if len(y.shape) > 1:
+            y = y.squeeze(1)
         preds = self.forward(x)
         loss = self.criterion(preds, y)
         self.log('test.loss', loss)
