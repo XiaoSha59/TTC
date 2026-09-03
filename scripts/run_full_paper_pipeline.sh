@@ -36,12 +36,9 @@ get_ckpt_arg() {
 }
 
 # ==============================================================================
-# PHASE 1: PNEUMONIAMNIST (TABLE 2)
+# PHASE 1: PNEUMONIAMNIST (TABLE 2) - COMPLETED 100%!
 # ==============================================================================
-echo ">>> [Phase 1/3] Running PneumoniaMNIST..."
-if [ ! -f "logs/train/runs/*pneumoniamnist-weightedce*/checkpoints/last.ckpt" ]; then
-    bash scripts/run_pneumonia.sh || true
-fi
+echo ">>> [Phase 1/3] PneumoniaMNIST already completed 100%. Moving to FracAtlas..."
 backup_to_gcs
 
 # ==============================================================================
