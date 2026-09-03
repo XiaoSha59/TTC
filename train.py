@@ -5,6 +5,8 @@ Based on Lightning + Hydra implementation.
 import os
 import numpy as np
 np.float_ = np.float64
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 import hydra
 from omegaconf import DictConfig, OmegaConf

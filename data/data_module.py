@@ -3,7 +3,8 @@ import os
 import torch
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler, random_split
 from torchvision.datasets import ImageFolder
-from PIL import Image
+from PIL import Image, ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 from tqdm import tqdm
 import lightning as pl
 from lightning import LightningDataModule
