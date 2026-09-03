@@ -1,6 +1,5 @@
 
 
-# contrastive.yaml
 _target_: models.sup_cont.ContrastiveResNet50
 
 max_epochs: ${trainer.max_epochs}
@@ -12,4 +11,7 @@ supervised: True
 warmup_epochs: 10
 optimizer_name: sgd
 batch_size: ${batch_size}
+ratio_supervised_majority: -1
+min_class: 0
+image_net_init: False
 

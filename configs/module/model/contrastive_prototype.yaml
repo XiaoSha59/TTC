@@ -1,6 +1,5 @@
 
 
-# contrastive.yaml
 _target_: models.sup_cont.ContrastiveResNet50Prototypes
 
 max_epochs: ${trainer.max_epochs}
@@ -15,3 +14,6 @@ batch_size: ${batch_size}
 pull_mode: "pull_to_pr_and_other_to_eps"
 eps_0: 1.0 
 eps_1: 1.0
+ratio_supervised_majority: -1
+min_class: 0
+image_net_init: False
