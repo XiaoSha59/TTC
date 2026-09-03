@@ -6,7 +6,6 @@ from lightning import LightningModule
 
 import torchmetrics
 import sys, os
-sys.path.append(os.path.abspath("/baselinescvpr"))
 
 
 class LinearClassifier(nn.Module):
