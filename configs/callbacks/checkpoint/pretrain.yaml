@@ -10,10 +10,10 @@
 
 
 _target_: lightning.pytorch.callbacks.ModelCheckpoint
-every_n_epochs: 100
-save_top_k: -1
+every_n_epochs: 10
+save_top_k: 1
 save_last: True
-verbose: False
+verbose: True
 dirpath: ${paths.output_dir}/checkpoints
 filename: "epoch{epoch:03d}"
 auto_insert_metric_name: False
