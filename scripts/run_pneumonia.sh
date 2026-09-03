@@ -22,10 +22,8 @@ trap backup_to_gcs EXIT
 
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
-# 1. PneumoniaMNIST - Supervised Minority (Ours)
-echo "[1/4] Running PneumoniaMNIST - Supervised Minority (SupMin)..."
-python train.py experiment=contrastive experiment/specs=generic_2_class data=med_mnist data.data_module.data_set=pneumonia batch_size=128 module.ratio_supervised_majority=0.0 name="pneumoniamnist-supmin"
-backup_to_gcs
+# 1. PneumoniaMNIST - Supervised Minority (Ours) -> ALREADY COMPLETED 100%!
+echo "[1/4] PneumoniaMNIST - Supervised Minority (SupMin) already finished. Skipping."
 
 # 2. PneumoniaMNIST - Supervised Prototypes (Ours)
 echo "[2/4] Running PneumoniaMNIST - Supervised Prototypes (SupProto)..."

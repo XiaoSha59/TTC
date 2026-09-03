@@ -2,7 +2,7 @@ data_module:
   _target_: data.data_module.MedMNISTDataModule
   _partial_: true
   data_dir: "data/medmnist"
-  num_workers: 8
+  num_workers: 4
   batch_size: ${batch_size}
   seed: ${seed}
   data_set: breast
