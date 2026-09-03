@@ -126,10 +126,11 @@ class SupConLoss(LightningModule):
             mask = numerator_mask
         else:
             # Standard supervised contrastive mode
-            min_indices = labels == self.minority_class
-            maj_indices = labels == self.majority_class
+            labels_1d = labels.flatten() if labels is not None else None
+            min_indices = (labels_1d == self.minority_class) if labels_1d is not None else None
+            maj_indices = (labels_1d == self.majority_class) if labels_1d is not None else None
 
-            labels = labels.contiguous().view(-1, 1) if labels is not None else None
+            labels = labels_1d.contiguous().view(-1, 1) if labels_1d is not None else None
 
             # Ensure labels dimensions match expected shapes
             if labels is not None and labels.shape[0] != batch_size:
@@ -140,10 +141,12 @@ class SupConLoss(LightningModule):
             
             # Create separate masks for majority and minority classes
             mask_maj, mask_min = mask.clone(), mask.clone()
-            mask_maj[min_indices] = 0.0
-            mask_maj[:, min_indices] = 0.0
-            mask_min[maj_indices] = 0.0
-            mask_min[:, maj_indices] = 0.0
+            if min_indices is not None:
+                mask_maj[min_indices, :] = 0.0
+                mask_maj[:, min_indices] = 0.0
+            if maj_indices is not None:
+                mask_min[maj_indices, :] = 0.0
+                mask_min[:, maj_indices] = 0.0
 
         # Combine features from all views
         contrast_count = features.shape[1]  # Number of views/augmentations
