@@ -22,12 +22,21 @@ trap backup_to_gcs EXIT
 
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
+# Helper to auto-detect and resume from latest checkpoint if interrupted
+get_ckpt_arg() {
+    local ckpt=$(ls -td logs/train/runs/*/checkpoints/last.ckpt 2>/dev/null | head -n1 || true)
+    if [ -n "$ckpt" ] && [ -f "$ckpt" ]; then
+        echo "ckpt_path=$ckpt"
+    fi
+}
+
 # 1. PneumoniaMNIST - Supervised Minority (Ours) -> ALREADY COMPLETED 100%!
 echo "[1/4] PneumoniaMNIST - Supervised Minority (SupMin) already finished. Skipping."
 
-# 2. PneumoniaMNIST - Supervised Prototypes (Ours)
+# 2. PneumoniaMNIST - Supervised Prototypes (Ours) - Auto-resuming from Epoch 20 checkpoint
 echo "[2/4] Running PneumoniaMNIST - Supervised Prototypes (SupProto)..."
-python train.py experiment=contrastive_sup_prototype experiment/specs=generic_2_class data=med_mnist data.data_module.data_set=pneumonia batch_size=128 name="pneumoniamnist-supproto"
+CKPT_ARG=$(get_ckpt_arg)
+python train.py experiment=contrastive_sup_prototype experiment/specs=generic_2_class data=med_mnist data.data_module.data_set=pneumonia batch_size=128 name="pneumoniamnist-supproto" $CKPT_ARG
 backup_to_gcs
 
 # 3. PneumoniaMNIST - Standard SupCon (Baseline)
