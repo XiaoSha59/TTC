@@ -1,7 +1,7 @@
 data_module:
   _target_: data.data_module.MedMNISTDataModule
   _partial_: true
-  data_dir: ${paths.data_dir}/medmnist
+  data_dir: "data/medmnist"
   num_workers: 8
   batch_size: ${batch_size}
   seed: ${seed}
