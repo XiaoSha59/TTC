@@ -2,12 +2,12 @@ data_module:
   _target_: data.data_module.NClassesDataModule
   _partial_: true
   _args_:
-    - "${oc.env:INAT21_DATA_PATH}"
+    - "${oc.env:INAT21_DATA_PATH,data/inat21}"
     - ${classes}
-  num_workers: 18
+  num_workers: 4
   data_set: "inat21"
   class_ratios: ${class_ratios}
   batch_size: ${batch_size}
   seed: ${seed}
-  persistent_workers: True
+  persistent_workers: False
   in_memory: False

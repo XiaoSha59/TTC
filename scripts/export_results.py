@@ -1,75 +1,74 @@
 #!/usr/bin/env python3
 """
-Export results from WandB project and generate Markdown & LaTeX tables
-matching Table 1 and Table 2 in the paper.
+Export and format Table 2 and Table 1 comparison tables from WandB.
 """
 
 import os
 import sys
 import wandb
 import pandas as pd
-from collections import defaultdict
 
 
-def fetch_all_runs(entity=None, project="binary-learning"):
+def fetch_and_format_table2(entity="tnpdung79hcmus", project="binary-learning"):
+    if not os.environ.get("WANDB_API_KEY"):
+        os.environ["WANDB_API_KEY"] = "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"
     api = wandb.Api()
-    path = f"{entity}/{project}" if entity else project
-    print(f"Connecting to WandB project: {path} ...")
-    try:
-        runs = api.runs(path)
-    except Exception as e:
-        print(f"Error connecting with project name '{path}': {e}")
-        print("Trying project 'TTC'...")
-        path = f"{entity}/TTC" if entity else "TTC"
-        runs = api.runs(path)
+    path = f"{entity}/{project}"
+    print(f"Fetching runs from {path} ...")
+    runs = api.runs(path, per_page=100)
 
-    data = []
-    for run in runs:
-        summary = run.summary._json_dict
-        config = run.config
+    # Collect best metric for each method & dataset
+    datasets = ["breast", "pneumonia", "fracatlas"]
+    methods = ["weightedce", "supcon", "supmin", "supproto"]
+
+    results = {}
+    for d in datasets:
+        results[d] = {}
+        for m in methods:
+            results[d][m] = {"acc": None, "auc": None, "loss": None}
+
+    for r in runs:
+        if r.state != "finished":
+            continue
+        name = r.name.lower()
+        s = r.summary._json_dict
         
-        # Extract metrics
-        row = {
-            "name": run.name,
-            "id": run.id,
-            "state": run.state,
-            "dataset": config.get("data", {}).get("data_module", {}).get("data_set", "unknown") if isinstance(config.get("data"), dict) else "unknown",
-            "auroc": summary.get("test.auroc") or summary.get("test/auroc") or summary.get("val.auroc"),
-            "balanced_accuracy": summary.get("test.balanced_accuracy") or summary.get("test/balanced_accuracy") or summary.get("val.balanced_accuracy"),
-            "accuracy": summary.get("test.accuracy") or summary.get("test/accuracy") or summary.get("val.accuracy"),
-            "saa": summary.get("test.saa") or summary.get("test/saa") or summary.get("val.saa"),
-            "cac": summary.get("test.cac") or summary.get("test/cac") or summary.get("val.cac"),
-            "loss": summary.get("train.loss") or summary.get("train/loss"),
-        }
-        data.append(row)
+        acc = s.get("online_val_acc") or s.get("val.acc") or s.get("test.acc")
+        auc = s.get("test.auc") or s.get("val.auroc")
+        loss = s.get("online_val_loss") or s.get("val.loss")
+        
+        for d in datasets:
+            if d in name:
+                for m in methods:
+                    if m in name:
+                        if acc is not None:
+                            results[d][m]["acc"] = acc
+                        if auc is not None:
+                            results[d][m]["auc"] = auc
+                        if loss is not None:
+                            results[d][m]["loss"] = loss
+
+    print("\n" + "=" * 90)
+    print(" TABLE 2: MEDICAL BENCHMARKS REPRODUCED RESULTS")
+    print("=" * 90)
     
-    df = pd.DataFrame(data)
-    return df
+    rows = [
+        {"Method": "Weighted CE (Baseline)", "BreastMNIST (Paper: 75.1%)": results["breast"]["weightedce"]["acc"], "PneumoniaMNIST (Paper: 98.8%)": results["pneumonia"]["weightedce"]["acc"], "FracAtlas (Paper: 79.8%)": results["fracatlas"]["weightedce"]["acc"]},
+        {"Method": "Standard SupCon (Baseline)", "BreastMNIST (Paper: 75.1%)": results["breast"]["supcon"]["acc"], "PneumoniaMNIST (Paper: 99.5%)": results["pneumonia"]["supcon"]["acc"], "FracAtlas (Paper: 84.8%)": results["fracatlas"]["supcon"]["acc"]},
+        {"Method": "Sup Minority (Ours)", "BreastMNIST (Paper: 86.4%)": results["breast"]["supmin"]["acc"], "PneumoniaMNIST (Paper: 99.6%)": results["pneumonia"]["supmin"]["acc"], "FracAtlas (Paper: 82.3%)": results["fracatlas"]["supmin"]["acc"]},
+        {"Method": "Sup Prototypes (Ours)", "BreastMNIST (Paper: 90.7%)": results["breast"]["supproto"]["acc"], "PneumoniaMNIST (Paper: 99.8%)": results["pneumonia"]["supproto"]["acc"], "FracAtlas (Paper: 86.0%)": results["fracatlas"]["supproto"]["acc"]},
+    ]
+    
+    df_table = pd.DataFrame(rows)
+    # Format percentages
+    for col in df_table.columns[1:]:
+        df_table[col] = df_table[col].apply(lambda x: f"{x*100:.2f}%" if pd.notnull(x) and isinstance(x, (int, float)) else ("N/A" if pd.isnull(x) else str(x)))
 
-
-def generate_tables(df):
-    print("\n" + "=" * 80)
-    print(" SUMMARY OF ALL EXPERIMENT RUNS")
-    print("=" * 80)
-    print(df.to_string(index=False))
-
-    # Save CSV
+    print(df_table.to_string(index=False))
+    
     os.makedirs("results", exist_ok=True)
-    csv_path = "results/wandb_metrics_summary.csv"
-    df.to_csv(csv_path, index=False)
-    print(f"\nSaved raw metrics to {csv_path}")
-
-    # Generate Markdown Table
-    md_path = "results/table2_medical_results.md"
-    with open(md_path, "w", encoding="utf-8") as f:
-        f.write("# Table 2: Medical Benchmarks Results\n\n")
-        f.write(df.to_markdown(index=False))
-        f.write("\n")
-    print(f"Saved Markdown table to {md_path}")
-
+    df_table.to_markdown("results/table2_medical_results.md", index=False)
+    print("\nSaved formatted table to results/table2_medical_results.md")
 
 if __name__ == "__main__":
-    entity = sys.argv[1] if len(sys.argv) > 1 else None
-    project = sys.argv[2] if len(sys.argv) > 2 else "binary-learning"
-    df = fetch_all_runs(entity, project)
-    generate_tables(df)
+    fetch_and_format_table2()
