@@ -20,6 +20,14 @@ backup_to_gcs() {
 # Trap interruption to sync before exit
 trap backup_to_gcs EXIT
 
+export INAT21_DATA_PATH="data/inat21"
+
+if [ ! -d "data/inat21" ]; then
+    echo "Downloading iNat21 dataset from Bucket..."
+    mkdir -p data
+    gcloud storage cp -r gs://ttc-paper-datasets-2025/inat21 data/
+fi
+
 RATIOS=("50_50:[0.5,0.5]" "95_5:[0.05,0.95]" "99_1:[0.01,0.99]")
 
 for ITEM in "${RATIOS[@]}"; do
