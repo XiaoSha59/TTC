@@ -42,7 +42,20 @@ class INaturalistNClasses(VisionDataset):
         if self.split not in ["train", "val"]:
             raise ValueError(f"Split must be 'train' or 'val', got {split}")
 
-        super().__init__(os.path.join(root, split),
+        split_path = os.path.join(root, split)
+        if not os.path.exists(split_path) or len(os.listdir(split_path)) == 0:
+            if split == "train" and os.path.exists(os.path.join(root, "train_mini")):
+                split_path = os.path.join(root, "train_mini")
+            elif split == "val" and os.path.exists(os.path.join(root, "val")):
+                split_path = os.path.join(root, "val")
+            elif os.path.exists(os.path.join(root, "train_mini")):
+                split_path = os.path.join(root, "train_mini")
+            elif os.path.exists(os.path.join(root, "inat21", "train_mini")):
+                split_path = os.path.join(root, "inat21", "train_mini")
+            elif os.path.exists(os.path.join(root, "inat21", split)):
+                split_path = os.path.join(root, "inat21", split)
+
+        super().__init__(split_path,
                          transform=transform, target_transform=target_transform)
 
         if not self._check_integrity():

@@ -22,10 +22,18 @@ trap backup_to_gcs EXIT
 
 export INAT21_DATA_PATH="data/inat21"
 
-if [ ! -d "data/inat21" ]; then
+if [ ! -d "data/inat21" ] || [ ! -d "data/inat21/train_mini" ]; then
     echo "Downloading iNat21 dataset from Bucket..."
-    mkdir -p data
-    gcloud storage cp -r gs://ttc-paper-datasets-2025/inat21 data/
+    mkdir -p data/inat21
+    gcloud storage cp -r gs://ttc-paper-datasets-2025/inat21/* data/inat21/ || true
+fi
+if [ -f "data/inat21/val.tar.gz" ] && [ ! -d "data/inat21/val" ]; then
+    echo "Extracting val.tar.gz..."
+    tar -xzf data/inat21/val.tar.gz -C data/inat21/ || true
+fi
+if [ -f "data/inat21/inat21/val.tar.gz" ] && [ ! -d "data/inat21/val" ]; then
+    echo "Extracting inat21/val.tar.gz..."
+    tar -xzf data/inat21/inat21/val.tar.gz -C data/inat21/ || true
 fi
 
 RATIOS=("50_50:[0.5,0.5]" "95_5:[0.05,0.95]" "99_1:[0.01,0.99]")
