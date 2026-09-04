@@ -5,9 +5,8 @@ data_module:
     - "${oc.env:INAT21_DATA_PATH,data/inat21}"
     - ${classes}
   num_workers: 4
-  data_set: "inat21"
   class_ratios: ${class_ratios}
-  batch_size: ${batch_size}
+  batch_size: 128
   seed: ${seed}
   persistent_workers: False
   in_memory: False

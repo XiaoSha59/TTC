@@ -10,6 +10,7 @@ source .venv/bin/activate
 echo "=========================================================="
 echo " Starting iNat21 Plants Experiments (Table 1)"
 echo "=========================================================="
+export INAT21_DATA_PATH="data/inat21"
 
 # Function to backup checkpoints to Bucket
 backup_to_gcs() {
@@ -20,20 +21,36 @@ backup_to_gcs() {
 # Trap interruption to sync before exit
 trap backup_to_gcs EXIT
 
-export INAT21_DATA_PATH="data/inat21"
+mkdir -p data/inat21
 
-if [ ! -d "data/inat21" ] || [ ! -d "data/inat21/train_mini" ]; then
-    echo "Downloading iNat21 dataset from Bucket..."
-    mkdir -p data/inat21
-    gcloud storage cp -r gs://ttc-paper-datasets-2025/inat21/* data/inat21/ || true
+if [ ! -d "data/inat21/train_mini" ] && [ ! -d "data/inat21/train" ]; then
+    if [ -d "data/inat21/inat21/train_mini" ]; then
+        echo "Relocating nested train_mini..."
+        mv data/inat21/inat21/train_mini data/inat21/
+    else
+        echo "Downloading iNat21 dataset from Bucket..."
+        gcloud storage cp -r gs://ttc-paper-datasets-2025/inat21/* data/inat21/ || true
+        if [ -d "data/inat21/inat21/train_mini" ]; then
+            mv data/inat21/inat21/train_mini data/inat21/
+        fi
+    fi
 fi
-if [ -f "data/inat21/val.tar.gz" ] && [ ! -d "data/inat21/val" ]; then
-    echo "Extracting val.tar.gz..."
-    tar -xzf data/inat21/val.tar.gz -C data/inat21/ || true
+
+if [ ! -d "data/inat21/val" ] || [ -z "$(ls -A data/inat21/val 2>/dev/null)" ]; then
+    if [ -f "data/inat21/val.tar.gz" ]; then
+        echo "Extracting data/inat21/val.tar.gz..."
+        tar -xzf data/inat21/val.tar.gz -C data/inat21/
+    elif [ -f "data/inat21/inat21/val.tar.gz" ]; then
+        echo "Extracting data/inat21/inat21/val.tar.gz..."
+        tar -xzf data/inat21/inat21/val.tar.gz -C data/inat21/
+    fi
 fi
-if [ -f "data/inat21/inat21/val.tar.gz" ] && [ ! -d "data/inat21/val" ]; then
-    echo "Extracting inat21/val.tar.gz..."
-    tar -xzf data/inat21/inat21/val.tar.gz -C data/inat21/ || true
+
+# Fix potential nested val/val
+if [ -d "data/inat21/val/val" ]; then
+    echo "Flattening nested data/inat21/val/val..."
+    mv data/inat21/val/val/* data/inat21/val/ 2>/dev/null || true
+    rmdir data/inat21/val/val 2>/dev/null || true
 fi
 
 RATIOS=("50_50:[0.5,0.5]" "95_5:[0.05,0.95]" "99_1:[0.01,0.99]")

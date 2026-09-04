@@ -3,10 +3,14 @@ Training script for contrastive learning experiments.
 Based on Lightning + Hydra implementation.
 """
 import os
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 import numpy as np
 np.float_ = np.float64
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+import torch
+if torch.cuda.is_available():
+    torch.set_float32_matmul_precision("high")
 
 import hydra
 from omegaconf import DictConfig, OmegaConf

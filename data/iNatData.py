@@ -42,91 +42,134 @@ class INaturalistNClasses(VisionDataset):
         if self.split not in ["train", "val"]:
             raise ValueError(f"Split must be 'train' or 'val', got {split}")
 
-        split_path = os.path.join(root, split)
-        if not os.path.exists(split_path) or len(os.listdir(split_path)) == 0:
-            if split == "train" and os.path.exists(os.path.join(root, "train_mini")):
-                split_path = os.path.join(root, "train_mini")
-            elif split == "val" and os.path.exists(os.path.join(root, "val")):
-                split_path = os.path.join(root, "val")
-            elif os.path.exists(os.path.join(root, "train_mini")):
-                split_path = os.path.join(root, "train_mini")
-            elif os.path.exists(os.path.join(root, "inat21", "train_mini")):
-                split_path = os.path.join(root, "inat21", "train_mini")
-            elif os.path.exists(os.path.join(root, "inat21", split)):
-                split_path = os.path.join(root, "inat21", split)
-
-        super().__init__(split_path,
-                         transform=transform, target_transform=target_transform)
+        # Robust split directory resolution
+        split_path = self._resolve_split_path(root, split)
+        super().__init__(split_path, transform=transform, target_transform=target_transform)
 
         if not self._check_integrity():
-            raise RuntimeError("Dataset not found or corrupted. Check the root path.")
+            raise RuntimeError(f"Dataset directory empty or invalid: {self.root}")
 
-        # Map category id to full path name
-        self.all_categories: List[str] = []
-        try:
-            self.all_categories = sorted(os.listdir(self.root))
-        except FileNotFoundError:
-            raise RuntimeError(f"Directory not found: {self.root}")
+        # List all valid category subdirectories (sorted for deterministic behavior)
+        self.all_categories: List[str] = sorted([
+            d for d in os.listdir(self.root)
+            if os.path.isdir(os.path.join(self.root, d))
+        ])
 
-        # Index of all files: (class_id, category_id, filepath)
+        if len(self.all_categories) == 0:
+            raise RuntimeError(f"No category subdirectories found in: {self.root}")
+
+        # Index of all samples: List of (class_id, cat_idx, filename)
+        # where cat_idx is the index into self.all_categories
         self.index: List[Tuple[int, int, str]] = []
 
         if classes is None:
             # Use full dataset
             print("Using full dataset!")
-            self.classes = [cat.split("_", 1)[1].lower() for cat in self.all_categories]
-            for dir_index, dir_name in enumerate(self.all_categories):
-                self._add_category_to_index(dir_index, dir_index)
+            self.classes = [
+                cat.split("_", 1)[1].lower() if "_" in cat else cat.lower()
+                for cat in self.all_categories
+            ]
+            for cat_idx in range(len(self.all_categories)):
+                self._add_category_to_index(cat_idx, cat_idx)
         else:
             # Only add samples from specified classes
             for cls_id, cls in enumerate(classes):
                 categories_for_cls = self._get_categories_for_class(cls)
-                for cat_id in categories_for_cls:
-                    self._add_category_to_index(cls_id, cat_id)
+                for cat_idx in categories_for_cls:
+                    self._add_category_to_index(cls_id, cat_idx)
 
         self._print_dataset_info()
 
-    def _add_category_to_index(self, cls_id: int, cat_id: int) -> None:
+    def _resolve_split_path(self, root: str, split: str) -> str:
+        """Find the actual split directory supporting multiple directory layouts."""
+        candidates = []
+        if split == "train":
+            candidates = [
+                os.path.join(root, "train_mini"),
+                os.path.join(root, "train"),
+                os.path.join(root, "inat21", "train_mini"),
+                os.path.join(root, "inat21", "train"),
+                os.path.join("data", "inat21", "train_mini"),
+                os.path.join("data", "inat21", "train"),
+                os.path.join(root, split),
+            ]
+        elif split == "val":
+            candidates = [
+                os.path.join(root, "val"),
+                os.path.join(root, "val", "val"),
+                os.path.join(root, "val_mini"),
+                os.path.join(root, "inat21", "val"),
+                os.path.join(root, "inat21", "val", "val"),
+                os.path.join("data", "inat21", "val"),
+                os.path.join("data", "inat21", "val", "val"),
+                os.path.join(root, split),
+            ]
+
+        # Check if root itself is already the split directory
+        norm_root = os.path.normpath(root)
+        if os.path.basename(norm_root) in [split, "train_mini", "val"]:
+            if os.path.isdir(root) and any(os.path.isdir(os.path.join(root, d)) for d in os.listdir(root)):
+                return root
+
+        for cand in candidates:
+            if os.path.isdir(cand):
+                subdirs = [d for d in os.listdir(cand) if os.path.isdir(os.path.join(cand, d))]
+                if len(subdirs) > 0:
+                    return cand
+
+        # If none found, provide detailed diagnostic error
+        searched = "\n  - ".join([os.path.abspath(c) for c in candidates])
+        raise FileNotFoundError(
+            f"Could not find valid '{split}' directory for iNaturalist dataset in '{root}'.\n"
+            f"Searched following candidate locations:\n  - {searched}\n"
+            f"Please check if data is downloaded and extracted properly."
+        )
+
+    def _add_category_to_index(self, cls_id: int, cat_idx: int) -> None:
         """Add all images from a category to the index."""
-        cat_path = os.path.join(self.root, self.all_categories[cat_id])
+        cat_dir_name = self.all_categories[cat_idx]
+        cat_path = os.path.join(self.root, cat_dir_name)
         try:
-            files = os.listdir(cat_path)
+            files = sorted(os.listdir(cat_path))
             for fname in files:
-                self.index.append((cls_id, cat_id, fname))
+                if fname.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp")):
+                    self.index.append((cls_id, cat_idx, fname))
         except FileNotFoundError:
             print(f"Warning: Category directory not found: {cat_path}")
 
     def _print_dataset_info(self) -> None:
         """Print dataset information and class statistics."""
-        print(f'Created dataset {self.__class__.__name__} with {len(self)} samples.')
-        print(f'Split: {self.split}')
-        print(f'Classes: {self.classes}')
-        
+        print(f'Created dataset {self.__class__.__name__} [{self.split}] with {len(self)} samples from {self.root}.')
         cls_counter = Counter(cls_id for (cls_id, _, _) in self.index)
         if self.classes:
             cls_counts = [cls_counter.get(i, 0) for i in range(len(self.classes))]
+            print(f'Classes: {self.classes}')
             print(f'Class counts: {cls_counts}')
 
     def _get_categories_for_class(self, cls: str) -> List[int]:
         """
-        Returns all category IDs that are in the subtree of the given class.
+        Returns list of category indices in self.all_categories that match the class name.
         
         Args:
-            cls (str): The class name to search for
+            cls (str): The class name to search for (e.g. 'Plantae_Tracheophyta_...')
             
         Returns:
-            List[int]: List of category IDs
+            List[int]: Indices in self.all_categories
         """
-        cats: List[int] = []
+        matched_indices: List[int] = []
         cls_lower = cls.lower()
         
-        for dir_name in self.all_categories:
-            # Remove the numeric prefix
-            cat_name = dir_name.split("_", 1)[1].lower()
-            if cat_name.startswith(cls_lower):
-                cats.append(int(dir_name.split("_", 1)[0]))
+        for dir_idx, dir_name in enumerate(self.all_categories):
+            # Remove the numeric prefix (e.g. "07018_Plantae_..." -> "Plantae_...")
+            if "_" in dir_name:
+                cat_name = dir_name.split("_", 1)[1].lower()
+            else:
+                cat_name = dir_name.lower()
 
-        return cats
+            if cat_name.startswith(cls_lower) or cls_lower in cat_name:
+                matched_indices.append(dir_idx)
+
+        return matched_indices
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
@@ -138,15 +181,16 @@ class INaturalistNClasses(VisionDataset):
         Returns:
             tuple: (image, target) where target is the class index
         """
-        class_id, cat_id, fname = self.index[index]
-        img_path = os.path.join(self.root, self.all_categories[cat_id], fname)
+        class_id, cat_idx, fname = self.index[index]
+        cat_dir_name = self.all_categories[cat_idx]
+        img_path = os.path.join(self.root, cat_dir_name, fname)
         
         try:
             img = Image.open(img_path).convert("RGB")
         except Exception as e:
             raise RuntimeError(f"Error loading image {img_path}: {e}")
 
-        target = class_id  # int number for the class
+        target = class_id
 
         if self.transform is not None:
             img = self.transform(img)
