@@ -5,6 +5,10 @@
 set -e
 source .venv/bin/activate
 
+# Ensure GPU VRAM is completely clean by terminating any orphaned zombie process
+pkill -9 -f "python.*train.py" 2>/dev/null || true
+sleep 1
+
 export INAT21_DATA_PATH="data/inat21"
 export TMPDIR="${HOME}/tmp"
 mkdir -p "$TMPDIR"
