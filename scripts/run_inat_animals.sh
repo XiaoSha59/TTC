@@ -41,6 +41,10 @@ fi
 # Ensure validation dataset is extracted and valid
 bash scripts/prepare_inat_val.sh
 
+# Remove zero-byte or corrupt jpg files
+echo ">>> Checking and cleaning any zero-byte files in dataset..."
+find data/inat21 -type f -size 0 -delete 2>/dev/null || true
+
 RATIOS=("50_50:[0.5,0.5]" "95_5:[0.05,0.95]" "99_1:[0.01,0.99]")
 
 for ITEM in "${RATIOS[@]}"; do
