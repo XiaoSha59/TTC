@@ -36,47 +36,8 @@ if [ ! -d "data/inat21/train_mini" ] && [ ! -d "data/inat21/train" ]; then
     fi
 fi
 
-# Ensure val split is extracted and valid
-if [ ! -d "data/inat21/val" ] || [ -z "$(ls -A data/inat21/val 2>/dev/null)" ]; then
-    echo ">>> Preparing iNat21 validation dataset..."
-    VAL_ARCHIVE=""
-    if [ -f "data/inat21/val.tar.gz" ]; then
-        VAL_ARCHIVE="data/inat21/val.tar.gz"
-    elif [ -f "data/inat21/inat21/val.tar.gz" ]; then
-        VAL_ARCHIVE="data/inat21/inat21/val.tar.gz"
-    fi
-
-    # Check if archive exists but is corrupted/truncated
-    if [ -n "$VAL_ARCHIVE" ]; then
-        echo "Testing archive integrity of $VAL_ARCHIVE..."
-        if ! tar -tf "$VAL_ARCHIVE" >/dev/null 2>&1; then
-            echo "⚠️ Archive $VAL_ARCHIVE is corrupted or truncated. Removing and downloading fresh copy..."
-            rm -f "$VAL_ARCHIVE"
-            VAL_ARCHIVE=""
-        fi
-    fi
-
-    if [ -z "$VAL_ARCHIVE" ]; then
-        echo "Downloading fresh val.tar.gz from GCS Bucket..."
-        gcloud storage cp gs://ttc-paper-datasets-2025/inat21/val.tar.gz data/inat21/val.tar.gz || \
-        gcloud storage cp -r gs://ttc-paper-datasets-2025/inat21/val data/inat21/ || true
-        if [ -f "data/inat21/val.tar.gz" ]; then
-            VAL_ARCHIVE="data/inat21/val.tar.gz"
-        fi
-    fi
-
-    if [ -n "$VAL_ARCHIVE" ] && [ -f "$VAL_ARCHIVE" ]; then
-        echo "Extracting $VAL_ARCHIVE to data/inat21/ ..."
-        tar -xzf "$VAL_ARCHIVE" -C data/inat21/
-    fi
-fi
-
-# Fix potential nested val/val
-if [ -d "data/inat21/val/val" ]; then
-    echo "Flattening nested data/inat21/val/val..."
-    mv data/inat21/val/val/* data/inat21/val/ 2>/dev/null || true
-    rmdir data/inat21/val/val 2>/dev/null || true
-fi
+# Ensure validation dataset is extracted and valid
+bash scripts/prepare_inat_val.sh
 
 RATIOS=("50_50:[0.5,0.5]" "95_5:[0.05,0.95]" "99_1:[0.01,0.99]")
 
