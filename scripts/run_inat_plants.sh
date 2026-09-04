@@ -11,6 +11,8 @@ echo "=========================================================="
 echo " Starting iNat21 Plants Experiments (Table 1)"
 echo "=========================================================="
 export INAT21_DATA_PATH="data/inat21"
+export TMPDIR="${HOME}/tmp"
+mkdir -p "$TMPDIR"
 
 # Function to backup checkpoints to Bucket
 backup_to_gcs() {

@@ -3,6 +3,14 @@ Training script for contrastive learning experiments.
 Based on Lightning + Hydra implementation.
 """
 import os
+import tempfile
+
+# Ensure temp directory exists
+tmp_fallback = os.environ.get("TMPDIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), ".tmp"))
+os.makedirs(tmp_fallback, exist_ok=True)
+os.environ["TMPDIR"] = tmp_fallback
+tempfile.tempdir = tmp_fallback
+
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 import numpy as np
 np.float_ = np.float64
