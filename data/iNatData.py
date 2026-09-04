@@ -133,7 +133,12 @@ class INaturalistNClasses(VisionDataset):
             files = sorted(os.listdir(cat_path))
             for fname in files:
                 if fname.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp")):
-                    self.index.append((cls_id, cat_idx, fname))
+                    fpath = os.path.join(cat_path, fname)
+                    try:
+                        if os.path.getsize(fpath) > 0:
+                            self.index.append((cls_id, cat_idx, fname))
+                    except OSError:
+                        pass
         except FileNotFoundError:
             print(f"Warning: Category directory not found: {cat_path}")
 
@@ -173,7 +178,7 @@ class INaturalistNClasses(VisionDataset):
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
-        Get item at the specified index.
+        Get item at the specified index with safe fallback for corrupted images.
         
         Args:
             index (int): Index of the sample to retrieve
@@ -188,7 +193,10 @@ class INaturalistNClasses(VisionDataset):
         try:
             img = Image.open(img_path).convert("RGB")
         except Exception as e:
-            raise RuntimeError(f"Error loading image {img_path}: {e}")
+            # Fallback to next sample if this specific file is corrupted/unreadable
+            print(f"⚠️ Warning: Skipping corrupted image {img_path}: {e}")
+            alt_idx = (index + 1) % len(self.index)
+            return self.__getitem__(alt_idx)
 
         target = class_id
 
