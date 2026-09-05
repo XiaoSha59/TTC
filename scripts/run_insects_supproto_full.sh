@@ -26,6 +26,8 @@ python train.py \
     trainer.max_epochs=350 \
     module.lr=0.0625 \
     trainer.precision=bf16-mixed \
+    data_module.persistent_workers=True \
+    trainer.check_val_every_n_epoch=5 \
     name="$RUN_NAME"
 
 # Tìm checkpoint vừa train xong
