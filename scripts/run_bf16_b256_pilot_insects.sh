@@ -1,8 +1,8 @@
 #!/bin/bash
 # ==============================================================================
-# Audited Experiment: Insects 95:5 SupProto
-# Protocol: Batch 256 (Physical) | Precision: BF16-mixed | LR: 0.0625 (Official)
-# Max Epochs: 350 | Early Stopping: patience=30 on val.loss
+# Full Paper Replication: Insects 95:5 SupProto
+# Protocol: 350 Epochs (No Early Stopping, Full Cosine Annealing to 0)
+# Batch 256 (Physical) | Precision: BF16-mixed | LR: 0.0625 (Official)
 # Phase 2: Official Linear Probing (50 epochs, SGD, lr=3e-4)
 # ==============================================================================
 
@@ -12,13 +12,13 @@ source .venv/bin/activate
 export INAT21_DATA_PATH="data/inat21"
 export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 
-NAME="insects-95_5-supproto-b256-350ep-es"
+NAME="insects-95_5-supproto-b256-350ep"
 FINETUNE_NAME="finetune-${NAME}"
 
 echo "======================================================================"
-echo "🚀 [STAGE 1/2] Contrastive Pre-training (Max 350 Ep + EarlyStopping)"
+echo "🚀 [STAGE 1/2] Full Contrastive Pre-training (Exact 350 Epochs)"
 echo "Specs: Insects 95:5 | Loss: SupPrototypes | Batch: 256 | Precision: BF16"
-echo "Learning Rate: 0.0625 (SGD + Cosine Warmup 10ep) | EarlyStopping: Patience 30"
+echo "Learning Rate: 0.0625 (SGD + Cosine Warmup 10ep -> Full 350ep decay)"
 echo "======================================================================"
 
 python train.py experiment=contrastive_sup_prototype experiment/specs=insects \
@@ -28,11 +28,6 @@ python train.py experiment=contrastive_sup_prototype experiment/specs=insects \
     trainer.precision=bf16-mixed \
     module.lr=0.0625 \
     trainer.max_epochs=350 \
-    +callbacks.early_stopping._target_=lightning.pytorch.callbacks.EarlyStopping \
-    +callbacks.early_stopping.monitor=val.loss \
-    +callbacks.early_stopping.patience=30 \
-    +callbacks.early_stopping.min_delta=0.001 \
-    +callbacks.early_stopping.mode=min \
     name="$NAME" \
     trainer.accelerator=gpu \
     trainer.devices=1
