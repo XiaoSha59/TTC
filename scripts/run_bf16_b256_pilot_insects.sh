@@ -19,7 +19,8 @@ echo "=========================================================="
 
 python train.py experiment=contrastive_sup_prototype experiment/specs=insects \
     class_ratios=[0.05,0.95] \
-    data.batch_size=256 \
+    batch_size=256 \
+    data.data_module.batch_size=256 \
     trainer.precision=bf16-mixed \
     module.lr=0.5 \
     trainer.max_epochs=100 \

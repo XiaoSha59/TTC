@@ -99,7 +99,16 @@ class ContrastiveResNet50(LightningModule):
  
 
     def forward(self, x) -> tuple[torch.Tensor, torch.Tensor]:
-        encoding = self.base_encoder(x)
+        if self.training:
+            import torch.utils.checkpoint as cp
+            for module in self.base_encoder:
+                if isinstance(module, nn.Sequential):
+                    x = cp.checkpoint(module, x, use_reentrant=False)
+                else:
+                    x = module(x)
+            encoding = x
+        else:
+            encoding = self.base_encoder(x)
         encoding = encoding.view(encoding.size(0), -1)  # Flatten the output
         projection = self.projection_head(encoding)
         projection = F.normalize(projection, dim=1)
