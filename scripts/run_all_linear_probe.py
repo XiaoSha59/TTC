@@ -9,6 +9,7 @@ import sys
 import glob
 import json
 import argparse
+import yaml
 import numpy as np
 import pandas as pd
 import torch
@@ -45,37 +46,53 @@ METHODS = ["weightedce", "supcon", "supmin", "supproto"]
 RATIOS = ["50_50", "95_5", "99_1"]
 
 
-def find_checkpoint(dataset, ratio, method, log_dir="logs"):
-    """Find the best matching checkpoint for a given run."""
-    # Priority 1: Search by run name in logs
-    keywords = [dataset, ratio, method]
-    candidates = []
-    
-    # Check all last.ckpt and epoch*.ckpt
-    for root, dirs, files in os.walk(log_dir):
-        for f in files:
-            if f.endswith(".ckpt"):
-                full_path = os.path.join(root, f)
-                # Check if all keywords or run name match
-                path_lower = full_path.lower()
-                if dataset in path_lower and ratio in path_lower and method in path_lower:
-                    candidates.append(full_path)
+def build_checkpoint_map(log_dir="logs"):
+    """
+    Scans logs/ and maps each run name (e.g. 'insects-95_5-supproto') 
+    to its corresponding checkpoint file by reading .hydra/config.yaml.
+    """
+    ckpt_map = {}
+    print(f"Scanning for checkpoints in '{log_dir}'...")
 
-    if candidates:
-        # Prefer last.ckpt or highest epoch
-        for c in candidates:
-            if "last.ckpt" in c:
-                return c
-        candidates.sort(key=os.path.getmtime, reverse=True)
-        return candidates[0]
+    # Method 1: Inspect .hydra/config.yaml in all run directories
+    cfg_files = glob.glob(f"{log_dir}/**/.hydra/config.yaml", recursive=True)
+    for cfg_file in cfg_files:
+        run_dir = os.path.dirname(os.path.dirname(cfg_file))
+        try:
+            with open(cfg_file, 'r', encoding='utf-8', errors='ignore') as f:
+                cfg = yaml.safe_load(f)
+            run_name = cfg.get("name")
+            if run_name:
+                ckpt_dir = os.path.join(run_dir, "checkpoints")
+                if os.path.exists(ckpt_dir):
+                    ckpts = glob.glob(f"{ckpt_dir}/*.ckpt")
+                    if ckpts:
+                        best = None
+                        for c in ckpts:
+                            if "last.ckpt" in c:
+                                best = c
+                                break
+                        if not best:
+                            ckpts.sort(key=os.path.getmtime, reverse=True)
+                            best = ckpts[0]
+                        ckpt_map[run_name.lower().strip()] = best
+        except Exception:
+            pass
 
-    # Priority 2: Check standard checkpoints/ directory if available
-    direct_name = f"{dataset}-{ratio}-{method}.ckpt"
-    direct_path = os.path.join("checkpoints", direct_name)
-    if os.path.exists(direct_path):
-        return direct_path
+    # Method 2: Scan all .ckpt files directly
+    all_ckpts = glob.glob(f"{log_dir}/**/*.ckpt", recursive=True)
+    all_ckpts += glob.glob("checkpoints/**/*.ckpt", recursive=True)
+    for c in all_ckpts:
+        c_lower = c.lower()
+        for d in ["plants", "insects", "animals"]:
+            for r in ["50_50", "95_5", "99_1"]:
+                for m in ["supproto", "supmin", "supcon", "weightedce"]:
+                    tag = f"{d}-{r}-{m}"
+                    if tag in c_lower and tag not in ckpt_map:
+                        ckpt_map[tag] = c
 
-    return None
+    print(f"Mapped {len(ckpt_map)} runs to checkpoints.")
+    return ckpt_map
 
 
 def extract_features(model, dataloader, device):
@@ -178,6 +195,17 @@ def evaluate_single_model(ckpt_path, dataset, data_dir="data/inat21", device="cu
     return bal_acc, auc, raw_acc
 
 
+def df_to_markdown_simple(df):
+    """Simple markdown table formatter that does not require tabulate."""
+    headers = list(df.columns)
+    lines = []
+    lines.append("| " + " | ".join(headers) + " |")
+    lines.append("| " + " | ".join(["---"] * len(headers)) + " |")
+    for _, row in df.iterrows():
+        lines.append("| " + " | ".join([str(val) for val in row]) + " |")
+    return "\n".join(lines)
+
+
 def run_all(datasets=None, ratios=None, data_dir="data/inat21"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("=" * 85)
@@ -188,6 +216,8 @@ def run_all(datasets=None, ratios=None, data_dir="data/inat21"):
         datasets = ["plants", "insects", "animals"]
     if ratios is None:
         ratios = ["50_50", "95_5", "99_1"]
+
+    ckpt_map = build_checkpoint_map("logs")
 
     results = {d: {r: {m: None for m in METHODS} for r in ratios} for d in datasets}
     auc_results = {d: {r: {m: None for m in METHODS} for r in ratios} for d in datasets}
@@ -201,8 +231,15 @@ def run_all(datasets=None, ratios=None, data_dir="data/inat21"):
             for m in METHODS:
                 current_task += 1
                 tag = f"{d}-{r}-{m}"
-                ckpt = find_checkpoint(d, r, m)
+                ckpt = ckpt_map.get(tag)
                 
+                # Try finding with alternate formats
+                if not ckpt:
+                    for k, v in ckpt_map.items():
+                        if d in k and r in k and m in k:
+                            ckpt = v
+                            break
+
                 if ckpt is None or not os.path.exists(ckpt):
                     print(f"[{current_task}/{total_tasks}] ⚠️ Checkpoint NOT found for {tag}, skipping...")
                     continue
@@ -238,7 +275,7 @@ def run_all(datasets=None, ratios=None, data_dir="data/inat21"):
                 "99:1 Extreme": f"{results[d]['99_1'][m]*100:.2f}%" if results[d]['99_1'][m] is not None else "N/A",
             })
         df = pd.DataFrame(rows)
-        summary_md += df.to_markdown(index=False) + "\n\n"
+        summary_md += df_to_markdown_simple(df) + "\n\n"
         print(f"\n=== SUMMARY FOR {d.upper()} ===")
         print(df.to_string(index=False))
 
