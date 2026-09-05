@@ -112,7 +112,12 @@ print(found)
                     data.data_module.batch_size=256 \
                     trainer.precision=bf16-mixed \
                     module.lr=0.0625 \
-                    trainer.max_epochs=100 \
+                    trainer.max_epochs=350 \
+                    +callbacks.early_stopping._target_=lightning.pytorch.callbacks.EarlyStopping \
+                    +callbacks.early_stopping.monitor=val.loss \
+                    +callbacks.early_stopping.patience=30 \
+                    +callbacks.early_stopping.min_delta=0.001 \
+                    +callbacks.early_stopping.mode=min \
                     name="$PRETRAIN_NAME" \
                     trainer.accelerator=gpu \
                     trainer.devices=1 $EXTRA_ARG
