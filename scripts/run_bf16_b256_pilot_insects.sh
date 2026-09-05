@@ -1,36 +1,45 @@
 #!/bin/bash
 # ==============================================================================
-# Pilot Experiment: BF16 + Batch Size 256 on Insects 95:5 SupProto
-# End-to-End 2-Layer Protocol (Phase 1 Pretrain + Phase 2 Linear Probing)
+# Audited Experiment: Insects 95:5 SupProto
+# Protocol: Batch 256 (Physical) | Precision: BF16-mixed | LR: 0.0625 (Official)
+# Max Epochs: 350 | Early Stopping: patience=30 on val.loss
+# Phase 2: Official Linear Probing (50 epochs, SGD, lr=3e-4)
 # ==============================================================================
 
 set -e
 source .venv/bin/activate
 
 export INAT21_DATA_PATH="data/inat21"
+export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 
-NAME="bf16-b256-insects-95_5-supproto"
+NAME="insects-95_5-supproto-b256-350ep-es"
 FINETUNE_NAME="finetune-${NAME}"
 
-echo "=========================================================="
-echo "🚀 [LỚP 1] Starting Phase 1 Pretraining: $NAME"
+echo "======================================================================"
+echo "🚀 [STAGE 1/2] Contrastive Pre-training (Max 350 Ep + EarlyStopping)"
 echo "Specs: Insects 95:5 | Loss: SupPrototypes | Batch: 256 | Precision: BF16"
-echo "=========================================================="
+echo "Learning Rate: 0.0625 (SGD + Cosine Warmup 10ep) | EarlyStopping: Patience 30"
+echo "======================================================================"
 
 python train.py experiment=contrastive_sup_prototype experiment/specs=insects \
     class_ratios=[0.05,0.95] \
     batch_size=256 \
     data.data_module.batch_size=256 \
     trainer.precision=bf16-mixed \
-    module.lr=0.5 \
-    trainer.max_epochs=100 \
+    module.lr=0.0625 \
+    trainer.max_epochs=350 \
+    +callbacks.early_stopping._target_=lightning.pytorch.callbacks.EarlyStopping \
+    +callbacks.early_stopping.monitor=val.loss \
+    +callbacks.early_stopping.patience=30 \
+    +callbacks.early_stopping.min_delta=0.001 \
+    +callbacks.early_stopping.mode=min \
     name="$NAME" \
     trainer.accelerator=gpu \
     trainer.devices=1
 
-echo "=========================================================="
-echo "✅ [LỚP 1] Pretraining Finished! Locating Checkpoint..."
-echo "=========================================================="
+echo "======================================================================"
+echo "✅ [STAGE 1/2] Pretraining Finished! Locating Checkpoint..."
+echo "======================================================================"
 
 CKPT_PATH=$(python3 -c "
 import os, glob, yaml
@@ -62,10 +71,15 @@ fi
 
 echo ">>> Found Checkpoint: $CKPT_PATH"
 echo ""
-echo "=========================================================="
-echo "🎯 [LỚP 2] Starting Phase 2 Official Linear Probing: $FINETUNE_NAME"
+
+# Explicit VRAM cleanup before Phase 2
+python3 -c "import torch; torch.cuda.is_available() and torch.cuda.empty_cache()" 2>/dev/null || true
+sleep 3
+
+echo "======================================================================"
+echo "🎯 [STAGE 2/2] Official Linear Probing: $FINETUNE_NAME"
 echo "Protocol: 50 Epochs SGD, lr=3e-4, Frozen Backbone on 1% Balanced Train Set"
-echo "=========================================================="
+echo "======================================================================"
 
 python train.py experiment=finetune experiment/specs=insects \
     +base_model_path="$CKPT_PATH" \
@@ -77,6 +91,9 @@ python train.py experiment=finetune experiment/specs=insects \
     trainer.accelerator=gpu \
     trainer.devices=1
 
-echo "=========================================================="
-echo "🎉 ALL 2 LAYERS COMPLETED FOR $NAME!"
-echo "=========================================================="
+# Explicit VRAM cleanup after Phase 2
+python3 -c "import torch; torch.cuda.is_available() and torch.cuda.empty_cache()" 2>/dev/null || true
+
+echo "======================================================================"
+echo "🎉 ALL 2 STAGES COMPLETED SUCCESSFULLY FOR $NAME!"
+echo "======================================================================"
