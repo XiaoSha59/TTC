@@ -53,15 +53,12 @@ MODELS=(
     "insects-50_50-supproto"
     "insects-50_50-supmin"
     "insects-50_50-supcon"
-    "insects-50_50-weightedce"
     "insects-95_5-supproto"
     "insects-95_5-supmin"
     "insects-95_5-supcon"
-    "insects-95_5-weightedce"
     "insects-99_1-supproto"
     "insects-99_1-supmin"
     "insects-99_1-supcon"
-    "insects-99_1-weightedce"
 )
 
 TOTAL=${#MODELS[@]}
@@ -73,6 +70,29 @@ for RUN_NAME in "${MODELS[@]}"; do
     echo "=========================================================="
     echo "[$COUNT/$TOTAL] Fine-tuning model: $RUN_NAME"
     echo "=========================================================="
+    
+    ALREADY_DONE=$(python3 -c "
+import os, glob, yaml, sys
+target_name = sys.argv[1].lower().strip()
+found = False
+for cfg_file in glob.glob('logs/**/.hydra/config.yaml', recursive=True):
+    try:
+        with open(cfg_file, 'r') as f:
+            cfg = yaml.safe_load(f)
+        if cfg.get('name', '').lower().strip() == target_name:
+            run_dir = os.path.dirname(os.path.dirname(cfg_file))
+            if os.path.exists(os.path.join(run_dir, 'checkpoints', 'last.ckpt')) or glob.glob(os.path.join(run_dir, 'checkpoints', '*.ckpt')):
+                found = True
+                break
+    except:
+        pass
+print('YES' if found else 'NO')
+" "finetune-$RUN_NAME")
+
+    if [ "$ALREADY_DONE" = "YES" ]; then
+        echo "⏩ Run finetune-$RUN_NAME already completed with checkpoint, skipping..."
+        continue
+    fi
     
     CKPT_PATH=$(get_ckpt_path "$RUN_NAME")
     
