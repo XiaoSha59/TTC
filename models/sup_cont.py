@@ -274,8 +274,9 @@ class ContrastiveResNet50Prototypes(ContrastiveResNet50):
         self._set_prototypes(simulate_prototypes=True)
         self.inverse_prototypes = inverse_prototypes
 
-    def on_training_start(self):
-        print("Setting prototypes before train")
+    def on_train_start(self):
+        print(">>> Setting prototypes before train start from real data distribution...")
+        self._set_prototypes(simulate_prototypes=self.simulate_prototypes)
 
     def _log_distance_to_prototypes(self, projection, labels, split="train"):
         labels_long = torch.cat([labels, labels], dim=0)
@@ -313,15 +314,30 @@ class ContrastiveResNet50Prototypes(ContrastiveResNet50):
         dm = self.trainer.datamodule
         train_ds = dm.train_dataset
 
-        # generate embeddings
-        projections, _ = self._generate_embeddings(train_ds)
-        if self.min_class is not None and int(self.min_class) == 0:
-            self.prototype_2, self.prototype_1 = find_n_prototypes(2, projections)
-        self.prototype_1, self.prototype_2 = find_n_prototypes(2, projections)
+        # generate embeddings using initial encoder (Section 4.3 in paper)
+        projections, targets = self._generate_embeddings(train_ds)
+
+        # Paper Section 4.3: p_maj is centroid of majority class, p_min = -p_maj
+        maj_cls = 1 - self.min_class if self.min_class is not None else 1
+        maj_mask = (targets == maj_cls)
+        if maj_mask.any():
+            p_maj = F.normalize(projections[maj_mask].sum(dim=0), dim=0)
+        else:
+            p_maj = F.normalize(projections.sum(dim=0), dim=0)
+        p_min = -p_maj
+
+        if self.min_class == 0:
+            self.prototype_1 = p_min
+            self.prototype_2 = p_maj
+        else:
+            self.prototype_1 = p_maj
+            self.prototype_2 = p_min
 
         if self.inverse_prototypes:
             self.prototype_1, self.prototype_2 = self.prototype_2, self.prototype_1
+
         self.critereon.set_prototypes(torch.stack([self.prototype_1, self.prototype_2], dim=0))
+        print(f">>> Prototypes initialized: Proto_0 norm={self.prototype_1.norm():.2f}, Proto_1 norm={self.prototype_2.norm():.2f}, cos_sim={torch.cosine_similarity(self.prototype_1, self.prototype_2, dim=0):.4f}")
 
     def training_step(self, batch, batch_idx) -> torch.Tensor:
         images, labels = batch
