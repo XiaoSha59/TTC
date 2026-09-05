@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Export and format Table 2 (Medical) and Table 1 (Natural) comparison tables from WandB.
+Export and format Table 2 (Medical) and Table 1 (Natural: Plants, Insects, Animals) comparison tables from WandB.
 """
 
 import os
@@ -8,6 +8,7 @@ import sys
 import wandb
 import pandas as pd
 
+sys.stdout.reconfigure(encoding='utf-8')
 
 def fetch_all_results(entity="tnpdung79hcmus", project="binary-learning"):
     if not os.environ.get("WANDB_API_KEY"):
@@ -15,7 +16,7 @@ def fetch_all_results(entity="tnpdung79hcmus", project="binary-learning"):
     api = wandb.Api()
     path = f"{entity}/{project}"
     print(f"Fetching runs from {path} ...")
-    runs = api.runs(path, per_page=100)
+    runs = api.runs(path, per_page=120)
 
     # Table 1: Natural Benchmarks (Plants, Insects, Animals) across 50:50, 95:5, 99:1
     t1_datasets = ["plants", "insects", "animals"]
@@ -57,26 +58,42 @@ def fetch_all_results(entity="tnpdung79hcmus", project="binary-learning"):
 
     os.makedirs("results", exist_ok=True)
 
-    # --- Print Table 1: Plants ---
-    print("\n" + "=" * 90)
-    print(" TABLE 1: NATURAL BENCHMARKS (PLANTS SUBSET)")
-    print("=" * 90)
-    t1_rows = [
-        {"Method": "Weighted CE (Baseline)", "50%:50% (Balanced)": table1_data["plants"]["50_50"]["weightedce"], "95%:5% (Imbalanced)": table1_data["plants"]["95_5"]["weightedce"], "99%:1% (Extreme)": table1_data["plants"]["99_1"]["weightedce"]},
-        {"Method": "Standard SupCon (Baseline)", "50%:50% (Balanced)": table1_data["plants"]["50_50"]["supcon"], "95%:5% (Imbalanced)": table1_data["plants"]["95_5"]["supcon"], "99%:1% (Extreme)": table1_data["plants"]["99_1"]["supcon"]},
-        {"Method": "Sup Minority (Ours)", "50%:50% (Balanced)": table1_data["plants"]["50_50"]["supmin"], "95%:5% (Imbalanced)": table1_data["plants"]["95_5"]["supmin"], "99%:1% (Extreme)": table1_data["plants"]["99_1"]["supmin"]},
-        {"Method": "Sup Prototypes (Ours)", "50%:50% (Balanced)": table1_data["plants"]["50_50"]["supproto"], "95%:5% (Imbalanced)": table1_data["plants"]["95_5"]["supproto"], "99%:1% (Extreme)": table1_data["plants"]["99_1"]["supproto"]},
-    ]
-    df_t1 = pd.DataFrame(t1_rows)
-    for col in df_t1.columns[1:]:
-        df_t1[col] = df_t1[col].apply(lambda x: f"{x*100:.2f}%" if pd.notnull(x) and isinstance(x, (int, float)) else ("N/A" if pd.isnull(x) else str(x)))
-    print(df_t1.to_string(index=False))
-    df_t1.to_markdown("results/table1_plants_results.md", index=False)
+    method_display = {
+        "weightedce": "Weighted CE (Baseline)",
+        "supcon": "Standard SupCon (Baseline)",
+        "supmin": "Sup Minority (Ours)",
+        "supproto": "Sup Prototypes (Ours)"
+    }
+
+    # --- Print Table 1 for Plants, Insects, Animals ---
+    full_t1_text = "# TABLE 1: NATURAL BENCHMARKS REPRODUCED RESULTS (iNaturalist 2021)\n\n"
+
+    for d in t1_datasets:
+        title = f"TABLE 1 SUBSET: {d.upper()}"
+        print("\n" + "=" * 80)
+        print(f" {title}")
+        print("=" * 80)
+        rows = []
+        for m in methods:
+            rows.append({
+                "Method": method_display[m],
+                "50%:50% (Balanced)": table1_data[d]["50_50"][m],
+                "95%:5% (Imbalanced)": table1_data[d]["95_5"][m],
+                "99%:1% (Extreme)": table1_data[d]["99_1"][m]
+            })
+        df = pd.DataFrame(rows)
+        for col in ["50%:50% (Balanced)", "95%:5% (Imbalanced)", "99%:1% (Extreme)"]:
+            df[col] = df[col].apply(lambda x: f"{x*100:.2f}%" if pd.notnull(x) and isinstance(x, (int, float)) else ("N/A" if pd.isnull(x) else str(x)))
+        print(df.to_string(index=False))
+        full_t1_text += f"### {d.capitalize()} Subset\n\n" + df.to_markdown(index=False) + "\n\n"
+
+    with open("results/table1_reproduction_full.md", "w", encoding="utf-8") as f:
+        f.write(full_t1_text)
 
     # --- Print Table 2: Medical ---
-    print("\n" + "=" * 90)
+    print("\n" + "=" * 80)
     print(" TABLE 2: MEDICAL BENCHMARKS REPRODUCED RESULTS")
-    print("=" * 90)
+    print("=" * 80)
     t2_rows = [
         {"Method": "Weighted CE (Baseline)", "BreastMNIST (Paper: 75.1%)": table2_data["breast"]["weightedce"]["acc"], "PneumoniaMNIST (Paper: 98.8%)": table2_data["pneumonia"]["weightedce"]["acc"], "FracAtlas (Paper: 79.8%)": table2_data["fracatlas"]["weightedce"]["acc"]},
         {"Method": "Standard SupCon (Baseline)", "BreastMNIST (Paper: 75.1%)": table2_data["breast"]["supcon"]["acc"], "PneumoniaMNIST (Paper: 99.5%)": table2_data["pneumonia"]["supcon"]["acc"], "FracAtlas (Paper: 84.8%)": table2_data["fracatlas"]["supcon"]["acc"]},
@@ -89,7 +106,8 @@ def fetch_all_results(entity="tnpdung79hcmus", project="binary-learning"):
     print(df_t2.to_string(index=False))
     df_t2.to_markdown("results/table2_medical_results.md", index=False)
 
+    print("\n>>> Export completed successfully to results/ directory!")
+
 
 if __name__ == "__main__":
     fetch_all_results()
-
