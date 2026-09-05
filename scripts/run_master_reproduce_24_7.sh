@@ -111,7 +111,7 @@ print(found)
                     batch_size=256 \
                     data.data_module.batch_size=256 \
                     trainer.precision=bf16-mixed \
-                    module.lr=0.5 \
+                    module.lr=0.0625 \
                     trainer.max_epochs=100 \
                     name="$PRETRAIN_NAME" \
                     trainer.accelerator=gpu \
