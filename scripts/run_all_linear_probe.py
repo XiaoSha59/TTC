@@ -144,11 +144,12 @@ def evaluate_single_model(ckpt_path, dataset, data_dir="data/inat21", device="cu
     model = model.to(device)
     model.eval()
 
-    # DataModule
+    # DataModule with balanced ratios [0.5, 0.5]
     val_transform = SimCLRValTransform(img_height=224, normalize=None)
     dm = NClassesDataModule(
         data_dir=data_dir,
         classes=classes,
+        class_ratios=[0.5, 0.5],
         train_transform=val_transform,
         val_transform=val_transform,
         batch_size=128,
@@ -251,6 +252,8 @@ def run_all(datasets=None, ratios=None, data_dir="data/inat21"):
                     auc_results[d][r][m] = auc
                     print(f"     👉 Balanced Acc: {bal_acc*100:.2f}% | AUC: {auc*100:.2f}% | Raw Acc: {raw_acc*100:.2f}%")
                 except Exception as e:
+                    import traceback
+                    traceback.print_exc()
                     print(f"     ❌ Error evaluating {tag}: {e}")
 
     # Generate final tables
