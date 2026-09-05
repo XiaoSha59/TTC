@@ -85,7 +85,7 @@ for RUN_NAME in "${MODELS[@]}"; do
     
     # Run 100% original author's train.py with experiment=finetune
     python train.py experiment=finetune experiment/specs=insects \
-        base_model_path="$CKPT_PATH" \
+        +base_model_path="$CKPT_PATH" \
         trainer.max_epochs=50 \
         module.optimizer_name=sgd \
         module.lr=3e-4 \
