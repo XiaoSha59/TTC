@@ -158,6 +158,10 @@ print(found)
                 trainer.devices=1
                 
             echo "🎉 Successfully finished both layers for: $PRETRAIN_NAME"
+            
+            # --- EXPLICIT VRAM & PROCESS CLEANUP ---
+            python3 -c "import torch; torch.cuda.is_available() and torch.cuda.empty_cache()" 2>/dev/null || true
+            sleep 3
         done
     done
 done

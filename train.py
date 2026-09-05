@@ -178,10 +178,18 @@ def train(cfg: DictConfig):
             datamodule.setup()
             ckpt_path = best_ckpt_path if best_ckpt_path else None
             trainer.test(model=model, datamodule=datamodule, ckpt_path=ckpt_path)
-
     # Collect all metrics
     test_metrics = trainer.callback_metrics
     metric_dict = {**train_metrics, **test_metrics}
+
+    # Explicit VRAM and Garbage Collection cleanup
+    if torch.cuda.is_available():
+        import gc
+        del model
+        del trainer
+        del datamodule
+        gc.collect()
+        torch.cuda.empty_cache()
 
     return metric_dict
 
