@@ -18,7 +18,7 @@ echo "Specs: Insects 95:5 | Loss: SupPrototypes | Batch: 256 | Precision: BF16"
 echo "=========================================================="
 
 python train.py experiment=contrastive_sup_prototype experiment/specs=insects \
-    class_ratios="[0.05,0.95]" \
+    class_ratios=[0.05,0.95] \
     data.batch_size=256 \
     trainer.precision=bf16-mixed \
     module.lr=0.5 \
