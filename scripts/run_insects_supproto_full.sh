@@ -49,10 +49,11 @@ echo "=================================================================="
 python train.py \
     experiment=finetune \
     experiment/specs=insects \
-    ckpt_path="$LATEST_CKPT" \
+    +base_model_path="$LATEST_CKPT" \
     trainer.max_epochs=50 \
     module.optimizer_name=adam \
     module.lr=0.0003 \
+    data.data_module.persistent_workers=True \
     name="insects-95_5-supproto-fixed-probe"
 
 echo "=================================================================="
