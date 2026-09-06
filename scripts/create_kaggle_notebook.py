@@ -46,7 +46,7 @@ notebook = {
    "outputs": [],
    "source": [
     "# 3. Cài đặt các gói phụ thuộc (mất ~20 giây)\n",
-    "!pip install -q lightning>=2.0.0 hydra-core>=1.3.2 omegaconf pyrootutils timm medmnist"
+    "!pip install -q 'lightning>=2.0.0' 'hydra-core>=1.3.2' omegaconf pyrootutils timm medmnist"
    ]
   },
   {
@@ -102,6 +102,11 @@ notebook = {
   }
  ],
  "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
   "language_info": {
    "name": "python"
   }

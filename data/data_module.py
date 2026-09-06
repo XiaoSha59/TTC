@@ -502,6 +502,7 @@ try:
             self.test_dataset = None
 
         def setup(self, stage=None):
+            os.makedirs(self.root_dir, exist_ok=True)
             dataset_mapping = {
                 "pneumonia": PneumoniaMNIST,
                 "breast": BreastMNIST,

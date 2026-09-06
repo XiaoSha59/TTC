@@ -11,6 +11,8 @@ echo "🏥 BẮT ĐẦU CHẠY LẠI WEIGHTED CE CHO MEDICAL BENCHMARKS (TABLE 2
 echo " Cấu hình: 100 Epochs | Inverse Frequency Class Weights | Batch 128"
 echo "=================================================================="
 
+mkdir -p data/medmnist
+
 # 1. BreastMNIST (Tỷ lệ thực tế: 63.2% âm tính vs 36.8% u ác tính)
 echo ""
 echo ">>> [1/3] Đang chạy BreastMNIST Weighted CE (class_ratios=[0.632, 0.368])..."
