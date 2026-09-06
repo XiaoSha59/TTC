@@ -49,7 +49,7 @@ def main():
             continue
             
         all_subdirs = [d for d in os.listdir(src_split) if os.path.isdir(os.path.join(src_split, d))]
-        matching_subdirs = [d for d in all_subdirs if any(d.startswith(c) for c in TARGET_CLASSES)]
+        matching_subdirs = [d for d in all_subdirs if any(c in d for c in TARGET_CLASSES)]
         
         print(f"[{split}] Found {len(matching_subdirs)} matching species categories out of {len(all_subdirs)}.")
         
@@ -73,7 +73,7 @@ def main():
 
     # Create dataset-metadata.json for Kaggle
     metadata = {
-        "title": "iNat21 Natural Benchmarks (Insects, Plants, Animals)",
+        "title": "iNat21 Natural Benchmarks",
         "id": "salala1706/inat21-natural",
         "licenses": [{"name": "CC0-1.0"}]
     }
