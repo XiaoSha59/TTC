@@ -85,10 +85,10 @@ def main():
 
     # Set credentials
     os.environ['KAGGLE_USERNAME'] = 'salala1706'
-    os.environ['KAGGLE_KEY'] = 'c50dd809cbcb96fb725040dee59239f5'
+    os.environ['KAGGLE_KEY'] = 'KGAT_c50dd809cbcb96fb725040dee59239f5'
 
     print(">>> Uploading dataset to Kaggle as salala1706/inat21-natural...")
-    cmd = ["kaggle", "datasets", "create", "-p", dst_root, "--dir-mode", "zip"]
+    cmd = [sys.executable, "-m", "kaggle", "datasets", "create", "-p", dst_root, "--dir-mode", "zip"]
     res = subprocess.run(cmd, capture_output=True, text=True)
     print(res.stdout)
     if res.stderr:
