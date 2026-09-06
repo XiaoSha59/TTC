@@ -85,12 +85,12 @@ class INaturalistNClasses(VisionDataset):
         candidates = []
         if split == "train":
             candidates = [
-                os.path.join(root, "train_mini"),
                 os.path.join(root, "train"),
-                os.path.join(root, "inat21", "train_mini"),
+                os.path.join(root, "train_mini"),
                 os.path.join(root, "inat21", "train"),
-                os.path.join("data", "inat21", "train_mini"),
+                os.path.join(root, "inat21", "train_mini"),
                 os.path.join("data", "inat21", "train"),
+                os.path.join("data", "inat21", "train_mini"),
                 os.path.join(root, split),
             ]
         elif split == "val":

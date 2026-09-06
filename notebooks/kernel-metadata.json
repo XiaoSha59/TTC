@@ -1,0 +1,17 @@
+{
+  "id": "salala1706/ttc-medical-weighted-ce",
+  "title": "TTC Medical Weighted CE",
+  "code_file": "kaggle_ttc_runner.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": [
+    "salala1706/fracatlas"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
