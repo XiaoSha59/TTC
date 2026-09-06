@@ -12,23 +12,33 @@ echo "🌿 KHỞI ĐỘNG WEIGHTED CROSS-ENTROPY CHO 3 TẬP TỰ NHIÊN (TABLE 
 echo " Cấu hình: 350 Epochs (Chuẩn Paper S2) | FP16 (16-mixed) | Batch Size 256"
 echo "=================================================================="
 
-# 1. Liên kết dữ liệu iNat21 Natural từ Kaggle Input
+# 1. Tìm kiếm và liên kết tự động dữ liệu iNat21 Natural từ /kaggle/input
 mkdir -p data
 export INAT21_DATA_PATH="data/inat21"
 
-if [ ! -d "data/inat21" ]; then
-    if [ -d "/kaggle/input/inat21-natural/train_mini" ]; then
-        echo ">>> Linking /kaggle/input/inat21-natural to data/inat21..."
-        ln -s /kaggle/input/inat21-natural data/inat21
-    elif [ -d "/kaggle/input/inat21-natural/inat21_natural/train_mini" ]; then
-        echo ">>> Linking nested /kaggle/input/inat21-natural/inat21_natural to data/inat21..."
-        ln -s /kaggle/input/inat21-natural/inat21_natural data/inat21
-    elif [ -d "/kaggle/input/inat21-natural" ]; then
-        echo ">>> Linking /kaggle/input/inat21-natural to data/inat21..."
-        ln -s /kaggle/input/inat21-natural data/inat21
-    elif [ -d "/kaggle/input/inat21" ]; then
-        echo ">>> Linking /kaggle/input/inat21 to data/inat21..."
-        ln -s /kaggle/input/inat21 data/inat21
+if [ ! -d "data/inat21/train_mini" ] && [ ! -d "data/inat21/train" ]; then
+    rm -rf data/inat21
+    FOUND=""
+    for d in /kaggle/input/*; do
+        if [ -d "$d/train_mini" ]; then
+            FOUND="$d"
+            break
+        elif [ -d "$d/inat21_natural/train_mini" ]; then
+            FOUND="$d/inat21_natural"
+            break
+        fi
+    done
+
+    if [ -n "$FOUND" ]; then
+        echo ">>> Đã tìm thấy dataset tại: $FOUND. Đang tạo liên kết sang data/inat21..."
+        ln -s "$FOUND" data/inat21
+    else
+        echo "⚠️ Cảnh báo: Chưa tìm thấy dataset trong /kaggle/input! Danh sách:"
+        ls -la /kaggle/input || true
+        for sub in /kaggle/input/*; do
+            echo "--- $sub ---"
+            ls -la "$sub" || true
+        done
     fi
 fi
 
