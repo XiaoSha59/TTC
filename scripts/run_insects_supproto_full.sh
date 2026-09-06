@@ -39,9 +39,8 @@ python train.py \
     trainer.max_epochs=350 \
     module.lr=0.0625 \
     trainer.precision=bf16-mixed \
-    data.data_module.num_workers=4 \
+    data.data_module.num_workers=2 \
     data.data_module.persistent_workers=False \
-    data.data_module.pin_memory=False \
     trainer.check_val_every_n_epoch=5 \
     name="insects-95_5-supproto-350ep-full" 2>&1 | tee -a "${LOG_FILE}"
 
