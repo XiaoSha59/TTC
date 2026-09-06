@@ -4,7 +4,6 @@
 # Auto-releases GPU when finished
 # ==============================================================================
 
-set -e
 echo "=================================================================="
 echo "🐝 KHỞI ĐỘNG STANDARD SUPCON 95:5 CHO INSECTS (KAGGLE GPU T4)"
 echo " Cấu hình: 350 Epochs Pretrain + 50 Epochs Probe | FP16-mixed | Batch Size 256"
@@ -14,16 +13,18 @@ echo "=================================================================="
 mkdir -p data
 export INAT21_DATA_PATH="data/inat21"
 
-if [ ! -d "data/inat21/train_mini" ] && [ ! -d "data/inat21/train" ]; then
-    rm -rf data/inat21
-    TRAIN_MINI=$(find /kaggle/input -type d -name "train_mini" 2>/dev/null | head -n 1)
-    if [ -n "$TRAIN_MINI" ]; then
-        FOUND=$(dirname "$TRAIN_MINI")
-        echo ">>> Đã tìm thấy dataset root tại: $FOUND. Đang tạo liên kết sang data/inat21..."
-        ln -s "$FOUND" data/inat21
-    else
-        echo "⚠️ Cảnh báo: Đang tìm kiếm các thư mục dataset khả dụng..."
-        find /kaggle/input -maxdepth 4 -type d 2>/dev/null || true
+rm -rf data/inat21
+TRAIN_MINI=$(find /kaggle/input -type d -name "train_mini" 2>/dev/null | head -n 1)
+if [ -n "$TRAIN_MINI" ]; then
+    FOUND=$(dirname "$TRAIN_MINI")
+    echo ">>> Đã tìm thấy dataset root tại: $FOUND. Đang tạo liên kết sang data/inat21..."
+    ln -sf "$FOUND" data/inat21
+else
+    echo "⚠️ Đang tìm train thông thường..."
+    TRAIN_DIR=$(find /kaggle/input -type d -name "train" 2>/dev/null | head -n 1)
+    if [ -n "$TRAIN_DIR" ]; then
+        FOUND=$(dirname "$TRAIN_DIR")
+        ln -sf "$FOUND" data/inat21
     fi
 fi
 
@@ -42,34 +43,33 @@ python train.py \
     data.data_module.num_workers=2 \
     data.data_module.persistent_workers=False \
     trainer.check_val_every_n_epoch=5 \
-    name="insects-95_5-supcon-350ep-full"
+    name="insects-95_5-supcon-350ep-full" || true
 
 CKPT_PATH=$(ls -td logs/train/runs/*/checkpoints/last.ckpt 2>/dev/null | head -n 1)
 TARGET_CKPT="logs/insects_95_5_supcon_last.ckpt"
 
-if [ -f "${CKPT_PATH}" ]; then
+if [ -n "${CKPT_PATH}" ] && [ -f "${CKPT_PATH}" ]; then
     echo ">>> Saving backbone checkpoint to: ${TARGET_CKPT}"
     mkdir -p logs
     cp "${CKPT_PATH}" "${TARGET_CKPT}"
+    
+    # Giai đoạn 2: Linear Probing Evaluation 50 Epochs
+    echo ""
+    echo ">>> [STAGE 2/2] Linear Probe Evaluation 50 Epochs (Adam lr=1e-3)..."
+    python train.py \
+        experiment=finetune \
+        experiment/specs=insects \
+        +base_model_path="${TARGET_CKPT}" \
+        trainer.max_epochs=50 \
+        module.optimizer_name=adam \
+        module.lr=0.001 \
+        train_transform._target_=data.augmentation.SimCLRValTransform \
+        data.data_module.num_workers=2 \
+        data.data_module.persistent_workers=False \
+        name="insects-95_5-supcon-full-probe" || true
 else
     echo "❌ Error: Could not locate last.ckpt!"
-    exit 1
 fi
-
-# Giai đoạn 2: Linear Probing Evaluation 50 Epochs
-echo ""
-echo ">>> [STAGE 2/2] Linear Probe Evaluation 50 Epochs (Adam lr=1e-3)..."
-python train.py \
-    experiment=finetune \
-    experiment/specs=insects \
-    +base_model_path="${TARGET_CKPT}" \
-    trainer.max_epochs=50 \
-    module.optimizer_name=adam \
-    module.lr=0.001 \
-    train_transform._target_=data.augmentation.SimCLRValTransform \
-    data.data_module.num_workers=2 \
-    data.data_module.persistent_workers=False \
-    name="insects-95_5-supcon-full-probe"
 
 echo ""
 echo "=================================================================="
