@@ -18,27 +18,14 @@ export INAT21_DATA_PATH="data/inat21"
 
 if [ ! -d "data/inat21/train_mini" ] && [ ! -d "data/inat21/train" ]; then
     rm -rf data/inat21
-    FOUND=""
-    for d in /kaggle/input/*; do
-        if [ -d "$d/train_mini" ]; then
-            FOUND="$d"
-            break
-        elif [ -d "$d/inat21_natural/train_mini" ]; then
-            FOUND="$d/inat21_natural"
-            break
-        fi
-    done
-
-    if [ -n "$FOUND" ]; then
-        echo ">>> Đã tìm thấy dataset tại: $FOUND. Đang tạo liên kết sang data/inat21..."
+    TRAIN_MINI=$(find /kaggle/input -type d -name "train_mini" 2>/dev/null | head -n 1)
+    if [ -n "$TRAIN_MINI" ]; then
+        FOUND=$(dirname "$TRAIN_MINI")
+        echo ">>> Đã tìm thấy dataset root tại: $FOUND. Đang tạo liên kết sang data/inat21..."
         ln -s "$FOUND" data/inat21
     else
-        echo "⚠️ Cảnh báo: Chưa tìm thấy dataset trong /kaggle/input! Danh sách:"
-        ls -la /kaggle/input || true
-        for sub in /kaggle/input/*; do
-            echo "--- $sub ---"
-            ls -la "$sub" || true
-        done
+        echo "⚠️ Cảnh báo: Không tìm thấy train_mini trong /kaggle/input!"
+        find /kaggle/input -maxdepth 4 -type d 2>/dev/null || true
     fi
 fi
 
