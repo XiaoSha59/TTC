@@ -9,7 +9,7 @@ base_model:
 num_ftrs: 2048
 num_classes: 2
 max_epochs: ${trainer.max_epochs}
-lr: 3e-4
+lr: 1e-3
 nesterov: False
 p_dropout: 0.0
 weight_decay: 1e-4

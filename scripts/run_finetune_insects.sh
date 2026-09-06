@@ -107,8 +107,9 @@ print('YES' if found else 'NO')
     python train.py experiment=finetune experiment/specs=insects \
         +base_model_path="$CKPT_PATH" \
         trainer.max_epochs=50 \
-        module.optimizer_name=sgd \
-        module.lr=3e-4 \
+        module.optimizer_name=adam \
+        module.lr=0.001 \
+        data.data_module.persistent_workers=True \
         name="finetune-$RUN_NAME" \
         trainer.accelerator=gpu \
         trainer.devices=1

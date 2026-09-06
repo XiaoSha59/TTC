@@ -20,7 +20,7 @@ val_transform:
   img_height: 224
   normalize: ${normalize}
 train_transform:
-  _target_: data.augmentation.SimCLRTrainTransform
+  _target_: data.augmentation.SimCLRValTransform
   img_height: 224
   normalize: ${normalize}
 test_transform:
