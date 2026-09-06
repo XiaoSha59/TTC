@@ -6,7 +6,7 @@ data_module:
     - ${classes}
   num_workers: 4
   class_ratios: ${class_ratios}
-  batch_size: 128
+  batch_size: ${batch_size}
   seed: ${seed}
   persistent_workers: False
   in_memory: False

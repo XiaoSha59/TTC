@@ -14,8 +14,16 @@ echo "=================================================================="
 
 # 1. Liên kết dữ liệu iNat21 Natural từ Kaggle Input
 mkdir -p data
+export INAT21_DATA_PATH="data/inat21"
+
 if [ ! -d "data/inat21" ]; then
-    if [ -d "/kaggle/input/inat21-natural" ]; then
+    if [ -d "/kaggle/input/inat21-natural/train_mini" ]; then
+        echo ">>> Linking /kaggle/input/inat21-natural to data/inat21..."
+        ln -s /kaggle/input/inat21-natural data/inat21
+    elif [ -d "/kaggle/input/inat21-natural/inat21_natural/train_mini" ]; then
+        echo ">>> Linking nested /kaggle/input/inat21-natural/inat21_natural to data/inat21..."
+        ln -s /kaggle/input/inat21-natural/inat21_natural data/inat21
+    elif [ -d "/kaggle/input/inat21-natural" ]; then
         echo ">>> Linking /kaggle/input/inat21-natural to data/inat21..."
         ln -s /kaggle/input/inat21-natural data/inat21
     elif [ -d "/kaggle/input/inat21" ]; then
@@ -45,7 +53,8 @@ for ITEM in "${RATIOS[@]}"; do
         batch_size=256 \
         trainer.max_epochs=100 \
         trainer.precision=16-mixed \
-        data.data_module.persistent_workers=True \
+        data.data_module.num_workers=2 \
+        data.data_module.persistent_workers=False \
         name="insects-$TAG-weightedce" || true
     echo "✅ Xong Insects Weighted CE $TAG!"
 done
@@ -69,7 +78,8 @@ for ITEM in "${RATIOS[@]}"; do
         batch_size=256 \
         trainer.max_epochs=100 \
         trainer.precision=16-mixed \
-        data.data_module.persistent_workers=True \
+        data.data_module.num_workers=2 \
+        data.data_module.persistent_workers=False \
         name="plants-$TAG-weightedce" || true
     echo "✅ Xong Plants Weighted CE $TAG!"
 done
@@ -93,7 +103,8 @@ for ITEM in "${RATIOS[@]}"; do
         batch_size=256 \
         trainer.max_epochs=100 \
         trainer.precision=16-mixed \
-        data.data_module.persistent_workers=True \
+        data.data_module.num_workers=2 \
+        data.data_module.persistent_workers=False \
         name="animals-$TAG-weightedce" || true
     echo "✅ Xong Animals Weighted CE $TAG!"
 done
