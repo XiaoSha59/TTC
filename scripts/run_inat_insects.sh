@@ -81,9 +81,9 @@ for ITEM in "${RATIOS[@]}"; do
     python train.py experiment=finetune experiment/specs=insects +base_model_path="logs/insects_${NAME_TAG}_supcon_pretrain_last.ckpt" trainer.max_epochs=50 module.optimizer_name=adam module.lr=0.001 train_transform._target_=data.augmentation.SimCLRValTransform data.data_module.persistent_workers=True name="insects-$NAME_TAG-supcon-probe"
     backup_to_gcs
 
-    # 4. Weighted Cross-Entropy (Baseline)
-    echo ">>> [4/4] Chạy Weighted Cross-Entropy Insects $NAME_TAG (100 epochs)..."
-    python train.py experiment=weighted_ce experiment/specs=insects class_ratios=$RATIO_VAL batch_size=256 trainer.max_epochs=100 trainer.precision=bf16-mixed data.data_module.persistent_workers=True name="insects-$NAME_TAG-weightedce"
+    # 4. Standard Cross-Entropy (Unweighted Baseline)
+    echo ">>> [4/4] Chạy Standard Cross-Entropy (Unweighted Baseline) Insects $NAME_TAG (100 epochs)..."
+    python train.py experiment/specs=insects class_ratios=$RATIO_VAL batch_size=256 trainer.max_epochs=100 trainer.precision=bf16-mixed data.data_module.persistent_workers=True name="insects-$NAME_TAG-ce"
     backup_to_gcs
 done
 
