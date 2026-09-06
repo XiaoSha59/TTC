@@ -9,7 +9,7 @@
 
 echo "=================================================================="
 echo "🌿 KHỞI ĐỘNG WEIGHTED CROSS-ENTROPY CHO 3 TẬP TỰ NHIÊN (TABLE 1)"
-echo " Cấu hình: 100 Epochs | FP16 (16-mixed) | Batch Size 256"
+echo " Cấu hình: 350 Epochs (Chuẩn Paper S2) | FP16 (16-mixed) | Batch Size 256"
 echo "=================================================================="
 
 # 1. Liên kết dữ liệu iNat21 Natural từ Kaggle Input
@@ -51,7 +51,7 @@ for ITEM in "${RATIOS[@]}"; do
         experiment/specs=insects \
         class_ratios=$RATIO \
         batch_size=256 \
-        trainer.max_epochs=100 \
+        trainer.max_epochs=350 \
         trainer.precision=16-mixed \
         data.data_module.num_workers=2 \
         data.data_module.persistent_workers=False \
@@ -76,7 +76,7 @@ for ITEM in "${RATIOS[@]}"; do
         experiment/specs=plants \
         class_ratios=$RATIO \
         batch_size=256 \
-        trainer.max_epochs=100 \
+        trainer.max_epochs=350 \
         trainer.precision=16-mixed \
         data.data_module.num_workers=2 \
         data.data_module.persistent_workers=False \
@@ -101,7 +101,7 @@ for ITEM in "${RATIOS[@]}"; do
         experiment/specs=animals \
         class_ratios=$RATIO \
         batch_size=256 \
-        trainer.max_epochs=100 \
+        trainer.max_epochs=350 \
         trainer.precision=16-mixed \
         data.data_module.num_workers=2 \
         data.data_module.persistent_workers=False \
