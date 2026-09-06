@@ -44,6 +44,10 @@ python train.py \
 echo "✅ Hoàn tất PneumoniaMNIST Weighted CE!"
 
 # 3. FracAtlas (Tỷ lệ thực tế: 79.0% lành vs 21.0% gãy xương)
+echo ""
+echo ">>> Đang kiểm tra và chuẩn bị dữ liệu FracAtlas..."
+python scripts/prepare_fracatlas.py 2>/dev/null || true
+
 if [ -d "data/fracatlas_splits/train" ]; then
     echo ""
     echo ">>> [3/3] Đang chạy FracAtlas Weighted CE (class_ratios=[0.79, 0.21])..."

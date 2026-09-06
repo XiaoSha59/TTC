@@ -11,6 +11,15 @@ from pathlib import Path
 
 def prepare_splits(data_root="data/FracAtlas", output_root="data/fracatlas_splits", seed=42):
     random.seed(seed)
+    
+    # Auto-detect on Kaggle if default data_root does not exist
+    if not os.path.exists(data_root) and os.path.exists("/kaggle/input"):
+        for root, dirs, files in os.walk("/kaggle/input"):
+            if "Fractured" in dirs and "Non_fractured" in dirs:
+                data_root = root
+                print(f">>> Auto-detected FracAtlas images at: {data_root}")
+                break
+
     images_dir = os.path.join(data_root, "images")
     if not os.path.exists(images_dir):
         # Check alternative capitalization
