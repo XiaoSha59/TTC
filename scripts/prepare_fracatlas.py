@@ -12,33 +12,44 @@ from pathlib import Path
 def prepare_splits(data_root="data/FracAtlas", output_root="data/fracatlas_splits", seed=42):
     random.seed(seed)
     
-    # Auto-detect on Kaggle if default data_root does not exist
-    if not os.path.exists(data_root) and os.path.exists("/kaggle/input"):
-        for root, dirs, files in os.walk("/kaggle/input"):
-            if "Fractured" in dirs and "Non_fractured" in dirs:
-                data_root = root
-                print(f">>> Auto-detected FracAtlas images at: {data_root}")
-                break
+    # Auto-detect on Kaggle or local if default data_root does not exist
+    fractured_dir = None
+    non_fractured_dir = None
 
-    images_dir = os.path.join(data_root, "images")
-    if not os.path.exists(images_dir):
-        # Check alternative capitalization
-        images_dir = os.path.join("data/fracatlas", "images")
-        if not os.path.exists(images_dir):
-            images_dir = data_root
-
-    classes = ["Fractured", "Non_fractured"]
-    for split in ["train", "val", "test"]:
-        for cls in classes:
-            os.makedirs(os.path.join(output_root, split, cls), exist_ok=True)
-
-    for cls in classes:
-        cls_dir = os.path.join(images_dir, cls)
-        if not os.path.exists(cls_dir):
-            print(f"Directory {cls_dir} not found. Skipping.")
+    search_roots = ["/kaggle/input", "data", "."]
+    for s_root in search_roots:
+        if not os.path.exists(s_root):
             continue
-        
-        files = glob.glob(os.path.join(cls_dir, "*.*"))
+        for root, dirs, files in os.walk(s_root):
+            for d in dirs:
+                dl = d.lower().replace("-", "_").replace(" ", "_")
+                if dl in ["fractured", "fracture"] and fractured_dir is None:
+                    # Verify it has image files
+                    test_files = glob.glob(os.path.join(root, d, "*.*"))
+                    if any(f.lower().endswith(('.jpg', '.jpeg', '.png')) for f in test_files):
+                        fractured_dir = os.path.join(root, d)
+                elif dl in ["non_fractured", "not_fractured", "nonfractured"] and non_fractured_dir is None:
+                    test_files = glob.glob(os.path.join(root, d, "*.*"))
+                    if any(f.lower().endswith(('.jpg', '.jpeg', '.png')) for f in test_files):
+                        non_fractured_dir = os.path.join(root, d)
+            if fractured_dir and non_fractured_dir:
+                break
+        if fractured_dir and non_fractured_dir:
+            break
+
+    if fractured_dir and non_fractured_dir:
+        print(f">>> Auto-detected FracAtlas classes:\n    Fractured: {fractured_dir}\n    Non-fractured: {non_fractured_dir}")
+    else:
+        print(f">>> Could not find both Fractured and Non_fractured directories in {search_roots}.")
+        return
+
+    classes = [("Fractured", fractured_dir), ("Non_fractured", non_fractured_dir)]
+    for split in ["train", "val", "test"]:
+        for cls_name, _ in classes:
+            os.makedirs(os.path.join(output_root, split, cls_name), exist_ok=True)
+
+    for cls_name, cls_dir in classes:
+        files = [f for f in glob.glob(os.path.join(cls_dir, "*.*")) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
         random.shuffle(files)
         
         n = len(files)
@@ -50,7 +61,7 @@ def prepare_splits(data_root="data/FracAtlas", output_root="data/fracatlas_split
         test_files = files[n_train + n_val:]
         
         for f in train_files:
-            dst = os.path.join(output_root, "train", cls, os.path.basename(f))
+            dst = os.path.join(output_root, "train", cls_name, os.path.basename(f))
             if not os.path.exists(dst):
                 try:
                     os.link(f, dst)
@@ -58,7 +69,7 @@ def prepare_splits(data_root="data/FracAtlas", output_root="data/fracatlas_split
                     shutil.copy2(f, dst)
                     
         for f in val_files:
-            dst = os.path.join(output_root, "val", cls, os.path.basename(f))
+            dst = os.path.join(output_root, "val", cls_name, os.path.basename(f))
             if not os.path.exists(dst):
                 try:
                     os.link(f, dst)
@@ -66,14 +77,14 @@ def prepare_splits(data_root="data/FracAtlas", output_root="data/fracatlas_split
                     shutil.copy2(f, dst)
                     
         for f in test_files:
-            dst = os.path.join(output_root, "test", cls, os.path.basename(f))
+            dst = os.path.join(output_root, "test", cls_name, os.path.basename(f))
             if not os.path.exists(dst):
                 try:
                     os.link(f, dst)
                 except:
                     shutil.copy2(f, dst)
                     
-        print(f"Class {cls}: {len(train_files)} train, {len(val_files)} val, {len(test_files)} test.")
+        print(f"Class {cls_name}: {len(train_files)} train, {len(val_files)} val, {len(test_files)} test.")
 
     print(f"FracAtlas splits successfully created at {output_root}!")
 
