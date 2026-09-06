@@ -9,7 +9,7 @@
 
 set -e
 cd /home/tnpdung_79/TTC
-git pull
+git pull || true
 source .venv/bin/activate
 export INAT21_DATA_PATH="data/inat21"
 export TMPDIR="${HOME}/tmp"
