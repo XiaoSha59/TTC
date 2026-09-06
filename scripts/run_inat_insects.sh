@@ -50,22 +50,40 @@ for ITEM in "${RATIOS[@]}"; do
     NAME_TAG="${ITEM%%:*}"
     RATIO_VAL="${ITEM##*:}"
     
-    echo ">>> Running Insects Ratio: $NAME_TAG ($RATIO_VAL)"
+    echo ""
+    echo "=========================================================="
+    echo ">>> BẮT ĐẦU TỶ LỆ INSECTS: $NAME_TAG ($RATIO_VAL)"
+    echo "=========================================================="
 
-    # 1. Supervised Minority (Ours)
-    python train.py experiment=contrastive experiment/specs=insects class_ratios=$RATIO_VAL module.ratio_supervised_majority=0.0 name="insects-$NAME_TAG-supmin"
-    backup_to_gcs
+    # 1. Supervised Minority (Ours) - Bỏ qua 50:50 vì Paper không áp dụng
+    if [ "$NAME_TAG" != "50_50" ]; then
+        echo ">>> [1/4] Chạy 2 lớp SupMinority Insects $NAME_TAG..."
+        python train.py experiment=contrastive experiment/specs=insects class_ratios=$RATIO_VAL module.ratio_supervised_majority=0.0 batch_size=256 trainer.max_epochs=350 module.lr=0.0625 trainer.precision=bf16-mixed data.data_module.persistent_workers=True trainer.check_val_every_n_epoch=5 name="insects-$NAME_TAG-supmin-350ep"
+        CKPT_MIN=$(ls -td logs/train/runs/*/checkpoints/last.ckpt 2>/dev/null | head -n 1)
+        cp "$CKPT_MIN" "logs/insects_${NAME_TAG}_supmin_pretrain_last.ckpt"
+        python train.py experiment=finetune experiment/specs=insects +base_model_path="logs/insects_${NAME_TAG}_supmin_pretrain_last.ckpt" trainer.max_epochs=50 module.optimizer_name=adam module.lr=0.001 train_transform._target_=data.augmentation.SimCLRValTransform data.data_module.persistent_workers=True name="insects-$NAME_TAG-supmin-probe"
+        backup_to_gcs
+    fi
 
     # 2. Supervised Prototypes (Ours)
-    python train.py experiment=contrastive_sup_prototype experiment/specs=insects class_ratios=$RATIO_VAL name="insects-$NAME_TAG-supproto"
+    echo ">>> [2/4] Chạy 2 lớp SupPrototypes Insects $NAME_TAG..."
+    python train.py experiment=contrastive_sup_prototype experiment/specs=insects class_ratios=$RATIO_VAL batch_size=256 trainer.max_epochs=350 module.lr=0.0625 trainer.precision=bf16-mixed data.data_module.persistent_workers=True trainer.check_val_every_n_epoch=5 name="insects-$NAME_TAG-supproto-350ep"
+    CKPT_PROTO=$(ls -td logs/train/runs/*/checkpoints/last.ckpt 2>/dev/null | head -n 1)
+    cp "$CKPT_PROTO" "logs/insects_${NAME_TAG}_supproto_pretrain_last.ckpt"
+    python train.py experiment=finetune experiment/specs=insects +base_model_path="logs/insects_${NAME_TAG}_supproto_pretrain_last.ckpt" trainer.max_epochs=50 module.optimizer_name=adam module.lr=0.001 train_transform._target_=data.augmentation.SimCLRValTransform data.data_module.persistent_workers=True name="insects-$NAME_TAG-supproto-probe"
     backup_to_gcs
 
-    # 3. Standard SupCon
-    python train.py experiment=contrastive experiment/specs=insects class_ratios=$RATIO_VAL module.ratio_supervised_majority=1.0 name="insects-$NAME_TAG-supcon"
+    # 3. Standard SupCon (Baseline)
+    echo ">>> [3/4] Chạy 2 lớp Standard SupCon Insects $NAME_TAG..."
+    python train.py experiment=contrastive experiment/specs=insects class_ratios=$RATIO_VAL module.ratio_supervised_majority=1.0 batch_size=256 trainer.max_epochs=350 module.lr=0.0625 trainer.precision=bf16-mixed data.data_module.persistent_workers=True trainer.check_val_every_n_epoch=5 name="insects-$NAME_TAG-supcon-350ep"
+    CKPT_SUPCON=$(ls -td logs/train/runs/*/checkpoints/last.ckpt 2>/dev/null | head -n 1)
+    cp "$CKPT_SUPCON" "logs/insects_${NAME_TAG}_supcon_pretrain_last.ckpt"
+    python train.py experiment=finetune experiment/specs=insects +base_model_path="logs/insects_${NAME_TAG}_supcon_pretrain_last.ckpt" trainer.max_epochs=50 module.optimizer_name=adam module.lr=0.001 train_transform._target_=data.augmentation.SimCLRValTransform data.data_module.persistent_workers=True name="insects-$NAME_TAG-supcon-probe"
     backup_to_gcs
 
-    # 4. Weighted Cross-Entropy
-    python train.py experiment=weighted_ce experiment/specs=insects class_ratios=$RATIO_VAL name="insects-$NAME_TAG-weightedce"
+    # 4. Weighted Cross-Entropy (Baseline)
+    echo ">>> [4/4] Chạy Weighted Cross-Entropy Insects $NAME_TAG (100 epochs)..."
+    python train.py experiment=weighted_ce experiment/specs=insects class_ratios=$RATIO_VAL batch_size=256 trainer.max_epochs=100 trainer.precision=bf16-mixed data.data_module.persistent_workers=True name="insects-$NAME_TAG-weightedce"
     backup_to_gcs
 done
 
