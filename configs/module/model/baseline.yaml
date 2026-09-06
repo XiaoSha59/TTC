@@ -9,3 +9,4 @@ dropout: 0.0
 weight_decay: 0
 warmup_epochs: 0
 optimizer_name: adam
+class_weights: ${class_ratios}
