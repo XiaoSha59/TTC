@@ -1,11 +1,11 @@
 #!/bin/bash
 # ==============================================================================
 # Run Weighted Cross-Entropy Baseline for Insects on Kaggle GPU T4 (350 Epochs)
-# Covers: Insects 95:5 and Insects 99:1 (and 50:50)
+# Covers: ALL 3 RATIOS (95:5, 99:1, 50:50)
 # ==============================================================================
 
 echo "=================================================================="
-echo "🐝 KHỞI ĐỘNG WEIGHTED CROSS-ENTROPY CHO INSECTS (KAGGLE GPU T4)"
+echo "🐝 KHỞI ĐỘNG WEIGHTED CROSS-ENTROPY CHO INSECTS TRỌN BỘ 3 TỶ LỆ"
 echo " Cấu hình: 350 Epochs | FP16-mixed | Batch Size 256 | Inverse Class Weights"
 echo "=================================================================="
 
@@ -33,7 +33,7 @@ fi
 # ------------------------------------------------------------------------------
 echo ""
 echo "=================================================================="
-echo ">>> [1/2] Đang chạy Insects Weighted CE 95:5 (Target: 63.4% Paper)..."
+echo ">>> [1/3] Đang chạy Insects Weighted CE 95:5 (Target: 63.4% Paper)..."
 echo "=================================================================="
 python train.py \
     experiment=weighted_ce \
@@ -47,11 +47,11 @@ python train.py \
     name="insects-95_5-weightedce-full" || true
 
 # ------------------------------------------------------------------------------
-# 2. Insects 99:1 (Chạy nối tiếp trong phiên 12h)
+# 2. Insects 99:1 (Tỷ lệ cực hạn)
 # ------------------------------------------------------------------------------
 echo ""
 echo "=================================================================="
-echo ">>> [2/2] Đang chạy Insects Weighted CE 99:1 (Target: 62.8% Paper)..."
+echo ">>> [2/3] Đang chạy Insects Weighted CE 99:1 (Target: 62.8% Paper)..."
 echo "=================================================================="
 python train.py \
     experiment=weighted_ce \
@@ -64,7 +64,25 @@ python train.py \
     data.data_module.persistent_workers=False \
     name="insects-99_1-weightedce-full" || true
 
+# ------------------------------------------------------------------------------
+# 3. Insects 50:50 (Tỷ lệ cân bằng)
+# ------------------------------------------------------------------------------
 echo ""
 echo "=================================================================="
-echo "🎉 HOÀN THÀNH TẤT CẢ CÁC TỶ LỆ INSECTS WEIGHTED CE TRÊN KAGGLE!"
+echo ">>> [3/3] Đang chạy Insects Weighted CE 50:50 (Target: 82.4% Paper)..."
+echo "=================================================================="
+python train.py \
+    experiment=weighted_ce \
+    experiment/specs=insects \
+    class_ratios=[0.5,0.5] \
+    batch_size=256 \
+    trainer.max_epochs=350 \
+    trainer.precision=16-mixed \
+    data.data_module.num_workers=2 \
+    data.data_module.persistent_workers=False \
+    name="insects-50_50-weightedce-full" || true
+
+echo ""
+echo "=================================================================="
+echo "🎉 HOÀN THÀNH TOÀN BỘ 3 TỶ LỆ INSECTS WEIGHTED CE TRÊN KAGGLE!"
 echo "=================================================================="
