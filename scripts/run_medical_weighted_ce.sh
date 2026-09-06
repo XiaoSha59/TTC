@@ -4,7 +4,7 @@
 # Đã tích hợp class_weights nghịch đảo tần số chuẩn xác theo Mục S1.3 & S2.2
 # ==============================================================================
 
-set -e
+# set -e (disabled so all 3 datasets run independently to completion)
 
 echo "=================================================================="
 echo "🏥 BẮT ĐẦU CHẠY LẠI WEIGHTED CE CHO MEDICAL BENCHMARKS (TABLE 2)"
