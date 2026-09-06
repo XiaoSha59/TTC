@@ -22,6 +22,11 @@ if torch.cuda.is_available():
 
 import hydra
 from omegaconf import DictConfig, OmegaConf
+try:
+    import omegaconf
+    torch.serialization.add_safe_globals([omegaconf.listconfig.ListConfig, omegaconf.dictconfig.DictConfig])
+except Exception:
+    pass
 from pytorch_lightning import (
     Callback,
     LightningDataModule,
