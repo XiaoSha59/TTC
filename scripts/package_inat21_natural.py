@@ -87,8 +87,12 @@ def main():
     os.environ['KAGGLE_USERNAME'] = 'salala1706'
     os.environ['KAGGLE_KEY'] = 'KGAT_c50dd809cbcb96fb725040dee59239f5'
 
+    kaggle_bin = os.path.join(os.path.dirname(sys.executable), "kaggle")
+    if not os.path.exists(kaggle_bin):
+        kaggle_bin = "kaggle"
+
     print(">>> Uploading dataset to Kaggle as salala1706/inat21-natural...")
-    cmd = [sys.executable, "-m", "kaggle", "datasets", "create", "-p", dst_root, "--dir-mode", "zip"]
+    cmd = [kaggle_bin, "datasets", "create", "-p", dst_root, "--dir-mode", "zip"]
     res = subprocess.run(cmd, capture_output=True, text=True)
     print(res.stdout)
     if res.stderr:
