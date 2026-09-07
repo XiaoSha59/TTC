@@ -74,13 +74,10 @@ python train.py \
 
 echo "" | tee -a "${LOG_FILE}"
 echo "==================================================================" | tee -a "${LOG_FILE}"
-echo "🎉 PIPELINE COMPLETED SUCCESSFULLY at $(date)!" | tee -a "${LOG_FILE}"
-echo "💤 Training finished! Powering off VM in 60 seconds to stop billing..." | tee -a "${LOG_FILE}"
+echo "🎉 INSECTS 95:5 SUP-PROTOTYPES COMPLETED SUCCESSFULLY at $(date)!" | tee -a "${LOG_FILE}"
+echo "🚀 AUTOMATICALLY CHAINING TO INSECTS 99:1 SUP-MINORITY (Ours)..." | tee -a "${LOG_FILE}"
 echo "==================================================================" | tee -a "${LOG_FILE}"
 
-# Sync all logs to disk before shutdown
-sync
-sleep 60
+# Seamlessly execute Insects 99:1 SupMinority (which will shut down VM when done)
+bash "${BASE_DIR}/scripts/run_insects_99_1_supmin_full.sh"
 
-# Stop/Shutdown VM (transitions VM to TERMINATED state, stopping all billing)
-sudo shutdown -h now
