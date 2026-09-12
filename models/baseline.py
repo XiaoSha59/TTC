@@ -180,6 +180,9 @@ class SupervisedImageClassifier(LightningModule):
             y = y.squeeze(1)
 
         preds = self.forward(x)
+        if hasattr(self.criterion, 'weight') and self.criterion.weight is not None:
+            if self.criterion.weight.device != preds.device:
+                self.criterion.weight = self.criterion.weight.to(preds.device)
         loss = self.criterion(preds, y)
         self.log('train.loss', loss)
 
@@ -193,6 +196,9 @@ class SupervisedImageClassifier(LightningModule):
         if len(y.shape) > 1:
             y = y.squeeze(1)
         preds = self.forward(x)
+        if hasattr(self.criterion, 'weight') and self.criterion.weight is not None:
+            if self.criterion.weight.device != preds.device:
+                self.criterion.weight = self.criterion.weight.to(preds.device)
         loss = self.criterion(preds, y)
         self.log('val.loss', loss)
 
@@ -208,6 +214,9 @@ class SupervisedImageClassifier(LightningModule):
         if len(y.shape) > 1:
             y = y.squeeze(1)
         preds = self.forward(x)
+        if hasattr(self.criterion, 'weight') and self.criterion.weight is not None:
+            if self.criterion.weight.device != preds.device:
+                self.criterion.weight = self.criterion.weight.to(preds.device)
         loss = self.criterion(preds, y)
         self.log('test.loss', loss)
 
