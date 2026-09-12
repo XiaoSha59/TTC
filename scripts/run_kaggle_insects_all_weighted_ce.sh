@@ -37,45 +37,45 @@ echo " Time: $(date)"
 echo "=================================================================="
 
 # 1. Insects 50:50 Weighted CE (Target: 82.4%)
-echo ">>> [1/3] Running Weighted CE 50:50..."
+echo ">>> [1/3] Running Weighted CE 50:50 (350 Epochs)..."
 python3 train.py \
     experiment=weighted_ce \
     experiment/specs=insects \
     class_ratios=[0.5,0.5] \
     batch_size=256 \
-    trainer.max_epochs=50 \
+    trainer.max_epochs=350 \
     module.optimizer_name=adam \
     module.lr=0.001 \
-    data.data_module.num_workers=4 \
-    data.data_module.persistent_workers=True \
+    data.data_module.num_workers=2 \
+    data.data_module.persistent_workers=False \
     name="insects-50_50-weighted_ce-full"
 
 # 2. Insects 95:5 Weighted CE (Target: 74.3%)
-echo ">>> [2/3] Running Weighted CE 95:5..."
+echo ">>> [2/3] Running Weighted CE 95:5 (350 Epochs)..."
 python3 train.py \
     experiment=weighted_ce \
     experiment/specs=insects \
     class_ratios=[0.05,0.95] \
     batch_size=256 \
-    trainer.max_epochs=50 \
+    trainer.max_epochs=350 \
     module.optimizer_name=adam \
     module.lr=0.001 \
-    data.data_module.num_workers=4 \
-    data.data_module.persistent_workers=True \
+    data.data_module.num_workers=2 \
+    data.data_module.persistent_workers=False \
     name="insects-95_5-weighted_ce-full"
 
 # 3. Insects 99:1 Weighted CE (Target: 66.8%)
-echo ">>> [3/3] Running Weighted CE 99:1..."
+echo ">>> [3/3] Running Weighted CE 99:1 (350 Epochs)..."
 python3 train.py \
     experiment=weighted_ce \
     experiment/specs=insects \
     class_ratios=[0.01,0.99] \
     batch_size=256 \
-    trainer.max_epochs=50 \
+    trainer.max_epochs=350 \
     module.optimizer_name=adam \
     module.lr=0.001 \
-    data.data_module.num_workers=4 \
-    data.data_module.persistent_workers=True \
+    data.data_module.num_workers=2 \
+    data.data_module.persistent_workers=False \
     name="insects-99_1-weighted_ce-full"
 
 echo "=================================================================="

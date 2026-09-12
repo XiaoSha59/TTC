@@ -1,7 +1,11 @@
 import os
+import sys
 import json
 import shutil
 from kaggle.api.kaggle_api_extended import KaggleApi
+
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding='utf-8')
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
