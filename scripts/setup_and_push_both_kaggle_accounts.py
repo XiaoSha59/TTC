@@ -21,7 +21,7 @@ meta1 = {
     "enable_gpu": "true",
     "enable_tpu": "false",
     "enable_internet": "true",
-    "dataset_sources": ["salala1706/inat21-insects-full"],
+    "dataset_sources": [],
     "competition_sources": [],
     "kernel_sources": []
 }
@@ -37,14 +37,28 @@ nb1 = {
             "metadata": {},
             "outputs": [],
             "source": [
-                "# 1. Clone & Update Repo\n",
+                "# 1. Stream Extract Full Insects Benchmark (~45 seconds directly from AWS S3)\n",
+                "import os, subprocess, time\n",
+                "data_path = '/kaggle/temp/inat21_full'\n",
+                "if not os.path.exists(f'{data_path}/train'):\n",
+                "    print('>>> [1/2] Streaming full Insects training data (Apidae + Vespidae) from AWS S3...')\n",
+                "    os.makedirs(data_path, exist_ok=True)\n",
+                "    !curl -sL 'https://ml-inat-competition-datasets.s3.amazonaws.com/2021/train.tar.gz' | tar -xz -C /kaggle/temp/inat21_full --wildcards 'train/*_Animalia_Arthropoda_Insecta_Hymenoptera_Apidae*' 'train/*_Animalia_Arthropoda_Insecta_Hymenoptera_Vespidae*'\n",
+                "    print('>>> [2/2] Streaming full Insects validation data (Apidae + Vespidae) from AWS S3...')\n",
+                "    !curl -sL 'https://ml-inat-competition-datasets.s3.amazonaws.com/2021/val.tar.gz' | tar -xz -C /kaggle/temp/inat21_full --wildcards 'val/*_Animalia_Arthropoda_Insecta_Hymenoptera_Apidae*' 'val/*_Animalia_Arthropoda_Insecta_Hymenoptera_Vespidae*'\n",
+                "    print('>>> Full dataset extraction complete!')\n",
+                "else:\n",
+                "    print('>>> Full dataset already present at', data_path)\n",
+                "\n",
+                "# 2. Clone & Update Repo\n",
                 "!git clone https://github.com/XiaoSha59/TTC.git || (cd TTC && git pull)\n",
                 "%cd TTC\n",
                 "!pip install -q 'lightning>=2.0.0' 'hydra-core>=1.3.2' omegaconf pyrootutils timm\n",
                 "import os\n",
                 "os.environ['WANDB_API_KEY'] = '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'\n",
+                "os.environ['INAT21_DATA_PATH'] = '/kaggle/temp/inat21_full'\n",
                 "!bash scripts/run_kaggle_insects_all_weighted_ce.sh\n",
-                "print('DONE ALL WEIGHTED CE')"
+                "print('🎉 ALL WEIGHTED CE BENCHMARKS FINISHED!')"
             ]
         }
     ],
@@ -73,7 +87,7 @@ meta2 = {
     "enable_gpu": "true",
     "enable_tpu": "false",
     "enable_internet": "true",
-    "dataset_sources": ["salala1706/inat21-insects-full"],
+    "dataset_sources": [],
     "competition_sources": [],
     "kernel_sources": []
 }
@@ -89,14 +103,28 @@ nb2 = {
             "metadata": {},
             "outputs": [],
             "source": [
-                "# 1. Clone & Update Repo\n",
+                "# 1. Stream Extract Full Insects Benchmark (~45 seconds directly from AWS S3)\n",
+                "import os, subprocess, time\n",
+                "data_path = '/kaggle/temp/inat21_full'\n",
+                "if not os.path.exists(f'{data_path}/train'):\n",
+                "    print('>>> [1/2] Streaming full Insects training data (Apidae + Vespidae) from AWS S3...')\n",
+                "    os.makedirs(data_path, exist_ok=True)\n",
+                "    !curl -sL 'https://ml-inat-competition-datasets.s3.amazonaws.com/2021/train.tar.gz' | tar -xz -C /kaggle/temp/inat21_full --wildcards 'train/*_Animalia_Arthropoda_Insecta_Hymenoptera_Apidae*' 'train/*_Animalia_Arthropoda_Insecta_Hymenoptera_Vespidae*'\n",
+                "    print('>>> [2/2] Streaming full Insects validation data (Apidae + Vespidae) from AWS S3...')\n",
+                "    !curl -sL 'https://ml-inat-competition-datasets.s3.amazonaws.com/2021/val.tar.gz' | tar -xz -C /kaggle/temp/inat21_full --wildcards 'val/*_Animalia_Arthropoda_Insecta_Hymenoptera_Apidae*' 'val/*_Animalia_Arthropoda_Insecta_Hymenoptera_Vespidae*'\n",
+                "    print('>>> Full dataset extraction complete!')\n",
+                "else:\n",
+                "    print('>>> Full dataset already present at', data_path)\n",
+                "\n",
+                "# 2. Clone & Update Repo\n",
                 "!git clone https://github.com/XiaoSha59/TTC.git || (cd TTC && git pull)\n",
                 "%cd TTC\n",
                 "!pip install -q 'lightning>=2.0.0' 'hydra-core>=1.3.2' omegaconf pyrootutils timm\n",
                 "import os\n",
                 "os.environ['WANDB_API_KEY'] = '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'\n",
+                "os.environ['INAT21_DATA_PATH'] = '/kaggle/temp/inat21_full'\n",
                 "!bash scripts/run_kaggle_insects_all_supcon.sh\n",
-                "print('DONE ALL SUPCON')"
+                "print('🎉 ALL SUPCON BENCHMARKS FINISHED!')"
             ]
         }
     ],

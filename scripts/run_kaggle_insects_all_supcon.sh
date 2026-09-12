@@ -13,7 +13,9 @@ BASE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${BASE_DIR}"
 
 # Data path resolution
-if [ -d "/kaggle/input/inat21-insects-full/train" ]; then
+if [ -d "/kaggle/temp/inat21_full/train" ]; then
+    export INAT21_DATA_PATH="/kaggle/temp/inat21_full"
+elif [ -d "/kaggle/input/inat21-insects-full/train" ]; then
     export INAT21_DATA_PATH="/kaggle/input/inat21-insects-full"
 elif [ -d "/kaggle/input/inat21-insects-full/kaggle_insects_full_pkg/train" ]; then
     export INAT21_DATA_PATH="/kaggle/input/inat21-insects-full/kaggle_insects_full_pkg"
