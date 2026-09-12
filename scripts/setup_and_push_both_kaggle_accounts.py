@@ -149,8 +149,11 @@ def push_kernels():
     print("Result 1:", res1)
     
     # Push Account 2
-    os.environ['KAGGLE_USERNAME'] = 'ngocuyennhitran'
-    os.environ['KAGGLE_KEY'] = 'KGAT_d8bfa22b3323e9d1a32a52737cc6a634'
+    if 'KAGGLE_USERNAME' in os.environ:
+        del os.environ['KAGGLE_USERNAME']
+    if 'KAGGLE_KEY' in os.environ:
+        del os.environ['KAGGLE_KEY']
+    os.environ['KAGGLE_API_TOKEN'] = 'KGAT_d8bfa22b3323e9d1a32a52737cc6a634'
     api2 = KaggleApi()
     api2.authenticate()
     print(">>> Authenticated as:", api2.get_config_value(api2.CONFIG_NAME_USER))

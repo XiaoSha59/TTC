@@ -1,6 +1,6 @@
 {
-  "id": "salala1706/ttc-insects-supcon-95-5",
-  "title": "ttc insects supcon 95 5",
+  "id": "ngocuyennhitran/ttc-insects-supcon-all",
+  "title": "TTC Insects SupCon All Ratios Full",
   "code_file": "kernel.ipynb",
   "language": "python",
   "kernel_type": "notebook",
@@ -8,9 +8,7 @@
   "enable_gpu": "true",
   "enable_tpu": "false",
   "enable_internet": "true",
-  "dataset_sources": [
-    "salala1706/inat21-natural"
-  ],
+  "dataset_sources": [],
   "competition_sources": [],
   "kernel_sources": []
 }
