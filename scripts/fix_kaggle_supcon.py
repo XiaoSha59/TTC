@@ -1,0 +1,75 @@
+import os
+import json
+
+kernel_dir = r"d:\TTC\kaggle_kernels\ttc-insects-supcon"
+os.makedirs(kernel_dir, exist_ok=True)
+
+nb = {
+    "cells": [
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": ["# 1. GPU Check\n", "!nvidia-smi"]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 2. Clone fresh repo\n",
+                "import os, shutil\n",
+                "%cd /kaggle/working\n",
+                "if os.path.exists('/kaggle/working/TTC'):\n",
+                "    shutil.rmtree('/kaggle/working/TTC')\n",
+                "!git clone https://github.com/XiaoSha59/TTC.git\n",
+                "%cd /kaggle/working/TTC\n"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 3. Install packages\n",
+                "!pip install -q 'lightning>=2.0.0' 'hydra-core>=1.3.2' omegaconf pyrootutils timm\n"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 4. WandB Login\n",
+                "import os, wandb\n",
+                "os.environ['WANDB_API_KEY'] = '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'\n",
+                "!wandb login $WANDB_API_KEY\n"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 5. Run Standard SupCon\n",
+                "!bash scripts/run_kaggle_insects_supcon.sh\n"
+            ]
+        }
+    ],
+    "metadata": {
+        "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
+        "language_info": {"name": "python"}
+    },
+    "nbformat": 4,
+    "nbformat_minor": 2
+}
+
+with open(os.path.join(kernel_dir, "kernel.ipynb"), "w", encoding="utf-8") as f:
+    json.dump(nb, f, indent=2)
+
+print("Kaggle SupCon notebook updated!")

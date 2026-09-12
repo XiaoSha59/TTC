@@ -5,8 +5,8 @@ kernel_dir = r"d:\TTC\kaggle_kernels\ttc-insects-weightedce"
 os.makedirs(kernel_dir, exist_ok=True)
 
 metadata = {
-    "id": "salala1706/ttc-insects-weightedce",
-    "title": "TTC Insects Weighted CE 95:5",
+    "id": "salala1706/ttc-insects-weighted-ce-95-5",
+    "title": "ttc insects weighted ce 95 5",
     "code_file": "kernel.ipynb",
     "language": "python",
     "kernel_type": "notebook",
@@ -87,17 +87,39 @@ notebook = {
             "metadata": {},
             "outputs": [],
             "source": [
-                "# 5. Liên kết Dataset iNat21 Natural\n",
-                "import os, subprocess, shutil\n",
-                "os.makedirs('data', exist_ok=True)\n",
-                "inat_input = '/kaggle/input/inat21-natural'\n",
-                "if not os.path.exists('data/inat21'):\n",
-                "    if os.path.exists(inat_input):\n",
-                "        os.symlink(inat_input, 'data/inat21')\n",
-                "        print('>>> Đã liên kết dataset từ /kaggle/input/inat21-natural thành công!')\n",
-                "    else:\n",
-                "        print('⚠️ Cảnh báo: Tìm kiếm dataset inat21...')\n",
-                "        !find /kaggle/input -maxdepth 3 -type d"
+                "# 5. Thiết lập Dataset iNat21 Natural (train_mini từ input, val từ S3)\n",
+                "import os, glob, subprocess, shutil\n",
+                "os.makedirs('data/inat21', exist_ok=True)\n",
+                "\n",
+                "# Link train_mini & train\n",
+                "train_src = '/kaggle/input/inat21-natural/train_mini'\n",
+                "if not os.path.exists(train_src):\n",
+                "    train_cands = glob.glob('/kaggle/input/**/train_mini', recursive=True)\n",
+                "    if train_cands:\n",
+                "        train_src = train_cands[0]\n",
+                "print(f'>>> Train Source: {train_src}')\n",
+                "\n",
+                "if not os.path.exists('data/inat21/train_mini'):\n",
+                "    os.symlink(train_src, 'data/inat21/train_mini')\n",
+                "if not os.path.exists('data/inat21/train'):\n",
+                "    os.symlink(train_src, 'data/inat21/train')\n",
+                "\n",
+                "# Download and extract val split into /tmp/val\n",
+                "if not os.path.exists('/tmp/val'):\n",
+                "    print('>>> Đang tải nhanh tập val (8.3GB) từ AWS S3...')\n",
+                "    !wget -q --show-progress -O /tmp/val.tar.gz https://ml-inat-competition-datasets.s3.amazonaws.com/2021/val.tar.gz\n",
+                "    print('>>> Đang giải nén tập val vào /tmp...')\n",
+                "    !tar -xzf /tmp/val.tar.gz -C /tmp/\n",
+                "    !rm -f /tmp/val.tar.gz\n",
+                "\n",
+                "if not os.path.exists('data/inat21/val'):\n",
+                "    os.symlink('/tmp/val', 'data/inat21/val')\n",
+                "\n",
+                "# Verify dataset\n",
+                "from data.iNatData import INaturalistNClasses\n",
+                "t_ds = INaturalistNClasses('data/inat21', split='train', classes=['Animalia_Arthropoda_Insecta_Hymenoptera_Apidae', 'Animalia_Arthropoda_Insecta_Hymenoptera_Vespidae'])\n",
+                "v_ds = INaturalistNClasses('data/inat21', split='val', classes=['Animalia_Arthropoda_Insecta_Hymenoptera_Apidae', 'Animalia_Arthropoda_Insecta_Hymenoptera_Vespidae'])\n",
+                "print(f'✅ Dataset iNat21 sẵn sàng! Train: {len(t_ds)} ảnh, Val: {len(v_ds)} ảnh')"
             ]
         },
         {
@@ -106,7 +128,7 @@ notebook = {
             "metadata": {},
             "outputs": [],
             "source": [
-                "# 6. Khởi chạy Insects Weighted CE 95:5 (350 Epochs)\n",
+                "# 6. Khởi chạy chuỗi Insects Weighted CE (95:5 -> 99:1 -> 50:50)\n",
                 "!python train.py \\\n",
                 "    experiment=weighted_ce \\\n",
                 "    experiment/specs=insects \\\n",
@@ -116,7 +138,29 @@ notebook = {
                 "    trainer.precision=16-mixed \\\n",
                 "    data.data_module.num_workers=2 \\\n",
                 "    data.data_module.persistent_workers=False \\\n",
-                "    name='insects-95_5-weightedce-full'"
+                "    name='insects-95_5-weightedce-full'\n",
+                "\n",
+                "!python train.py \\\n",
+                "    experiment=weighted_ce \\\n",
+                "    experiment/specs=insects \\\n",
+                "    class_ratios=[0.01,0.99] \\\n",
+                "    batch_size=256 \\\n",
+                "    trainer.max_epochs=350 \\\n",
+                "    trainer.precision=16-mixed \\\n",
+                "    data.data_module.num_workers=2 \\\n",
+                "    data.data_module.persistent_workers=False \\\n",
+                "    name='insects-99_1-weightedce-full'\n",
+                "\n",
+                "!python train.py \\\n",
+                "    experiment=weighted_ce \\\n",
+                "    experiment/specs=insects \\\n",
+                "    class_ratios=[0.5,0.5] \\\n",
+                "    batch_size=256 \\\n",
+                "    trainer.max_epochs=350 \\\n",
+                "    trainer.precision=16-mixed \\\n",
+                "    data.data_module.num_workers=2 \\\n",
+                "    data.data_module.persistent_workers=False \\\n",
+                "    name='insects-50_50-weightedce-full'"
             ]
         },
         {
@@ -125,7 +169,7 @@ notebook = {
             "metadata": {},
             "outputs": [],
             "source": [
-                "print('🎉 Hoàn thành xuất sắc Insects Weighted CE 95:5! Kaggle GPU tự động giải phóng.')"
+                "print('🎉 Hoàn thành xuất sắc toàn bộ chuỗi Insects Weighted CE! Kaggle GPU tự động giải phóng.')"
             ]
         }
     ],
