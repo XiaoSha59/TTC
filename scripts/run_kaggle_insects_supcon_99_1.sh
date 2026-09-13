@@ -25,7 +25,7 @@ python3 train.py \
     experiment/specs=insects \
     class_ratios=[0.01,0.99] \
     batch_size=256 \
-    trainer.max_epochs=350 \
+    trainer.max_epochs=180 \
     module.lr=0.0625 \
     module.pull_mode=pull_to_pr \
     data.data_module.num_workers=2 \
